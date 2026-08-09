@@ -1,35 +1,44 @@
-﻿namespace cpu
+using System;
+
+namespace cpu
 {
     public static class Program
     {
         public static void Main(string[] args)
         {
-            if (args.Length != 1)
+            while (true)
             {
-                Console.WriteLine("Usage: cpu-sim <rom-path>");
-                Environment.Exit(1);
+                Console.WriteLine("What would you like to run?");
+                Console.WriteLine("  1. Simulator");
+                Console.WriteLine("  2. Assembler");
+                Console.WriteLine("  q. Quit");
+                Console.Write("> ");
+
+                string choice = Console.ReadLine()?.Trim().ToLowerInvariant() ?? "";
+
+                switch (choice)
+                {
+                    case "1":
+                    case "sim":
+                    case "simulator":
+                        Simulator.Run();
+                        break;
+                    case "2":
+                    case "asm":
+                    case "assembler":
+                        Assembler.AssemblerApp.Run();
+                        break;
+                    case "q":
+                    case "quit":
+                    case "exit":
+                        return;
+                    default:
+                        Console.WriteLine("Unknown choice");
+                        break;
+                }
+
+                Console.WriteLine();
             }
-            
-            string romPath = args[0];
-
-            if (!File.Exists(romPath))
-            {
-                Console.WriteLine($"File '{romPath}' does not exist");
-                Environment.Exit(1);
-            }
-
-            /*
-            byte[] romBytes = File.ReadAllBytes(romPath);
-
-            Console.WriteLine($"Loaded rom of {romBytes.Length} byte{(romBytes.Length != 1 ? "s" : "")}");
-            */
-
-            byte[] romBytes = new byte[1024];
-
-            CPU cpu = new(64, romBytes);
-
-            cpu.RunInst();
-            cpu.RegisterDump();
         }
     }
 }

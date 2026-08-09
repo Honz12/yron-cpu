@@ -2,9 +2,9 @@ All instructions are little-endian
 
 Argument tags:
 
-- `RB`: Raw Byte - A raw 8-bit value embeded in the code.
-- `RW`: Raw Word - A raw 16-bit value embeded in the code.
-- `RD`: Raw Double word - A raw 32-bit value embeded in the code.
+- `RB`: Raw Byte - A raw 8-bit value embedded in the code.
+- `RW`: Raw Word - A raw 16-bit value embedded in the code.
+- `RD`: Raw Double word - A raw 32-bit value embedded in the code.
 - `reg`: Register reference.
 
 ALIAS|ARG 1         |ARG 2          |ARG 3          | Description
@@ -22,7 +22,7 @@ LDd  |Register `reg`|Address `reg`  |-              |Loads a 32-bit value from R
 STb  |Register `reg`|Address `reg`  |-              |Stores an 8-bit value into RAM specified by the address
 STw  |Register `reg`|Address `reg`  |-              |Stores a 16-bit value into RAM specified by the address
 STd  |Register `reg`|Address `reg`  |-              |Stores a 32-bit value into RAM specified by the address
-MOV  |Dest `reg`    |Source `reg`   |-              |Coppies over a value
+MOV  |Dest `reg`    |Source `reg`   |-              |Copies over a value
 ADD  |A `reg`       |B `reg`        |Dest `reg`     |Arithmetic operation
 SUB  |A `reg`       |B `reg`        |Dest `reg`     |Arithmetic operation
 MUL  |A `reg`       |B `reg`        |Dest `reg`     |Arithmetic operation
@@ -41,5 +41,5 @@ LTE  |A `reg`       |B `reg`        |Dest `reg`     |Compare operation
 JMP  |Address `RD`  |-              |-              |Jumps to a value
 JNZ  |Address `RD`  |Cond `reg`     |-              |Jumps to a value if `Cond != 0`
 JZ   |Address `RD`  |Cond `reg`     |-              |Jumps to a value if `Cond == 0`
-PUSH |Value `reg`   |Size `RB`      |-              |Pushes a value to the stack, Size corelates to the number of bytes pushed: 0 -> 1 Byte, 1 -> 2 Bytes, 2 -> 4 Bytes
-POP  |Dest `reg`    |Size `RB`      |-              |Pops a value from the stack, Size corelates to the number of bytes popped: 0 -> 1 Byte, 1 -> 2 Bytes, 2 -> 4 Bytes
+PUSH |Value `reg`   |Size `RB`      |-              |Pushes a value to the stack, Size correlates to the number of bytes pushed: 0 -> 1 Byte, 1 -> 2 Bytes, 2 -> 4 Bytes
+POP  |Dest `reg`    |Size `RB`      |-              |Pops a value from the stack, Size correlates to the number of bytes popped: 0 -> 1 Byte, 1 -> 2 Bytes, 2 -> 4 Bytes

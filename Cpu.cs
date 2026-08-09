@@ -79,6 +79,8 @@ namespace cpu
             {
                 Ram[i] = romBytes[i];
             }
+
+            Registers[REG_SP] = (uint) Ram.Length;
         
             Console.WriteLine($"CPU initialized with {ramSizeKb} kilobyte{(ramSizeKb != 1 ? "s" : "")} of RAM");
         }
@@ -95,61 +97,46 @@ namespace cpu
 
         public void StackPush(uint value, StackEntrySize stackEntrySize)
         {
-            switch (stackEntrySize)
+            byte bytes = stackEntrySize switch
             {
-                case StackEntrySize.BYTE:
-                    {
-                        Registers[REG_SP]--;
-                        WriteRam(value, 0, Registers[REG_SP]);
-                    }
-                    break;
-                case StackEntrySize.WORD:
-                    {
-                        Registers[REG_SP] -= 2;
-                        WriteRam(value, 0, Registers[REG_SP]);
-                        WriteRam(value, 1, Registers[REG_SP]);
-                    }
-                    break;
-                case StackEntrySize.DWORD:
-                    {
-                        Registers[REG_SP] -= 4;
-                        WriteRam(value, 0, Registers[REG_SP]);
-                        WriteRam(value, 1, Registers[REG_SP]);
-                        WriteRam(value, 2, Registers[REG_SP]);
-                        WriteRam(value, 3, Registers[REG_SP]);
-                    }
-                    break;
+                StackEntrySize.BYTE => 1,
+                StackEntrySize.WORD => 2,
+                _ => 4
+            };
+
+            if (Registers[REG_SP] < bytes || (ulong) Registers[REG_SP] > (ulong) Ram.Length)
+                RaiseError("STACK UNDERFLOW");
+
+            Registers[REG_SP] -= bytes;
+
+            for (int b = 0; b < bytes; b++)
+            {
+                WriteRam(value, (byte) b, Registers[REG_SP]);
             }
         }
 
         public uint StackPop(StackEntrySize stackEntrySize)
         {
-            switch (stackEntrySize)
+            byte bytes = stackEntrySize switch
             {
-                case StackEntrySize.BYTE:
-                    {
-                        Registers[REG_SP]--;
-                        return
-                            ReadRam(0, Registers[REG_SP]);
-                    }
-                case StackEntrySize.WORD:
-                    {
-                        Registers[REG_SP] -= 2;
-                        return
-                            ReadRam(0, Registers[REG_SP]) |
-                            ReadRam(1, Registers[REG_SP]);
-                    }
-                case StackEntrySize.DWORD:
-                    {
-                        Registers[REG_SP] -= 4;
-                        return
-                            ReadRam(0, Registers[REG_SP]) |
-                            ReadRam(1, Registers[REG_SP]) |
-                            ReadRam(2, Registers[REG_SP]) |
-                            ReadRam(3, Registers[REG_SP]);
-                    }
+                StackEntrySize.BYTE => 1,
+                StackEntrySize.WORD => 2,
+                _ => 4
+            };
+
+            if ((ulong) Registers[REG_SP] + bytes > (ulong) Ram.Length)
+                RaiseError("STACK UNDERFLOW");
+
+            uint value = 0;
+
+            for (int b = 0; b < bytes; b++)
+            {
+                value |= ReadRam((byte) b, Registers[REG_SP]);
             }
-            throw new Exception();
+
+            Registers[REG_SP] += bytes;
+
+            return value;
         }
 
         public void SetRegister(byte reg, uint value)
@@ -169,8 +156,8 @@ namespace cpu
 
         private void RaiseError(string errorMessage)
         {
-            Console.WriteLine(errorMessage);
             RegisterDump();
+            throw new Exception(errorMessage);
         }
 
         public void RegisterDump()
@@ -675,19 +662,19 @@ namespace cpu
                 case InstructionOpcode.JNZ:
                     {
                         uint value = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
-                        pc += 4;
-                        uint cond = GetRegister((byte) ReadRam(0, pc));
-                        
+                        uint cond = GetRegister((byte) ReadRam(0, pc + 4));
+
                         if (cond != 0) Registers[REG_PC] = value;
+                        else IncrementPC(6);
                     }
                     break;
                 case InstructionOpcode.JZ:
                     {
                         uint value = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
-                        pc += 4;
-                        uint cond = GetRegister((byte) ReadRam(0, pc));
-                        
+                        uint cond = GetRegister((byte) ReadRam(0, pc + 4));
+
                         if (cond == 0) Registers[REG_PC] = value;
+                        else IncrementPC(6);
                     }
                     break;
                 case InstructionOpcode.PUSH:
@@ -696,8 +683,26 @@ namespace cpu
                         pc++;
                         byte size = (byte) ReadRam(0, pc);
 
-                        if (size < 3) StackPush(value, (StackEntrySize) size);
-                        else RaiseError($"INVALID SIZE {size}");
+                        if (size >= 3) RaiseError($"INVALID PUSH SIZE {size}");
+
+                        StackPush(value, (StackEntrySize) size);
+
+                        IncrementPC(3);
+                    }
+                    break;
+                case InstructionOpcode.POP:
+                    {
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        byte size = (byte) ReadRam(0, pc);
+
+                        if (size >= 3) RaiseError($"INVALID POP SIZE {size}");
+
+                        uint value = StackPop((StackEntrySize) size);
+
+                        SetRegister(reg, value);
+
+                        IncrementPC(3);
                     }
                     break;
                 default:
