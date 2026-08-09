@@ -26,7 +26,7 @@
 
             byte[] romBytes = new byte[1024];
 
-            CPU cpu = new((romBytes.Length / 1024) + ((romBytes.Length % 1024 != 0) ? 1 : 0), romBytes);
+            CPU cpu = new(64, romBytes);
 
             cpu.RunInst();
             cpu.RegisterDump();

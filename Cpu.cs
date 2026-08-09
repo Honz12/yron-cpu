@@ -66,6 +66,8 @@ namespace cpu
         public const int REG_INT_REASON = 1;
         public const int REG_SP = 2;
 
+        public const int INTERRUPT_TABLE_START_ADDRESS = 0x200;
+
         public uint[] Registers = new uint[32];
         private byte[] Ram;
 
@@ -155,6 +157,11 @@ namespace cpu
             Registers[reg] = value;
         }
 
+        public uint GetRegister(byte reg)
+        {
+            return Registers[reg];
+        }
+
         private void IncrementPC(int inc)
         {
             Registers[REG_PC] += (uint) inc;
@@ -185,13 +192,32 @@ namespace cpu
             }
         }
 
+        public void CallInterrupt(byte reason)
+        {
+            StackPush(Registers[REG_PC], StackEntrySize.DWORD);
+
+            Registers[REG_INT_REASON] = reason;
+
+            uint jumpValueAddress = (uint) (reason * 4 + INTERRUPT_TABLE_START_ADDRESS);
+
+            uint jumpValue = 
+                ReadRam(0, jumpValueAddress) |
+                ReadRam(1, jumpValueAddress) |
+                ReadRam(2, jumpValueAddress) |
+                ReadRam(3, jumpValueAddress);
+
+            Registers[REG_PC] = jumpValue;
+
+            Console.WriteLine($"CALLED INTERRUPT 0x{reason:X2}, JUMPING TO {jumpValue}");
+        }
+
         public void RunInst()
         {
             uint pc = Registers[REG_PC];
-            byte opcode = (byte) ReadRam(0, pc);
+            InstructionOpcode opcode = (InstructionOpcode) ReadRam(0, pc);
             pc++;
 
-            switch ((InstructionOpcode) opcode)
+            switch (opcode)
             {
                 case InstructionOpcode.NOP:
                     {
@@ -203,10 +229,8 @@ namespace cpu
                         byte reason = (byte) ReadRam(0, pc);
 
                         IncrementPC(2);
-                        
-                        StackPush(Registers[REG_PC], StackEntrySize.DWORD);
 
-                        CallInterrupt();
+                        CallInterrupt(reason);
                     }
                     break;
                 case InstructionOpcode.CALL:
@@ -215,11 +239,15 @@ namespace cpu
 
                         IncrementPC(5);
                         StackPush(Registers[REG_PC], StackEntrySize.DWORD);
+
+                        Registers[REG_PC] = value;
                     }
                     break;
                 case InstructionOpcode.RET:
                     {
-                        
+                        uint value = StackPop(StackEntrySize.DWORD);
+
+                        Registers[REG_PC] = value;
                     }
                     break;
                 case InstructionOpcode.LDIb:
@@ -259,145 +287,422 @@ namespace cpu
                     {
                         byte reg = (byte) ReadRam(0, pc);
                         pc++;
-                        uint address = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
+                        uint address = GetRegister((byte) ReadRam(0, pc));
 
                         uint value = ReadRam(0, address);
-                        IncrementPC(6);
+                        
+                        SetRegister(reg, value);
+
+                        IncrementPC(3);
                     }
                     break;
                 case InstructionOpcode.LDw:
                     {
                         byte reg = (byte) ReadRam(0, pc);
                         pc++;
-                        uint address = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
+                        uint address = GetRegister((byte) ReadRam(0, pc));
                         
                         uint value = ReadRam(0, address) | ReadRam(1, address);
-                        IncrementPC(6);
+                        
+                        SetRegister(reg, value);
+
+                        IncrementPC(3);
                     }
                     break;
                 case InstructionOpcode.LDd:
                     {
                         byte reg = (byte) ReadRam(0, pc);
                         pc++;
-                        uint address = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
+                        uint address = GetRegister((byte) ReadRam(0, pc));
                         
                         uint value = ReadRam(0, address) | ReadRam(1, address) | ReadRam(2, address) | ReadRam(3, address);
-                        IncrementPC(6);
+                        
+                        SetRegister(reg, value);
+
+                        IncrementPC(3);
                     }
                     break;
                 case InstructionOpcode.STb:
                     {
-                        
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = GetRegister((byte) ReadRam(0, pc));
+
+                        uint value = GetRegister(reg);
+
+                        WriteRam(value, 0, address);
+
+                        IncrementPC(3);
                     }
                     break;
                 case InstructionOpcode.STw:
                     {
-                        
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = GetRegister((byte) ReadRam(0, pc));
+
+                        uint value = GetRegister(reg);
+
+                        WriteRam(value, 0, address);
+                        WriteRam(value, 1, address);
+
+                        IncrementPC(3);
                     }
                     break;
                 case InstructionOpcode.STd:
                     {
-                        
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = GetRegister((byte) ReadRam(0, pc));
+
+                        uint value = GetRegister(reg);
+
+                        WriteRam(value, 0, address);
+                        WriteRam(value, 1, address);
+                        WriteRam(value, 2, address);
+                        WriteRam(value, 3, address);
+
+                        IncrementPC(3);
                     }
                     break;
                 case InstructionOpcode.MOV:
                     {
-                        
+                        byte dest = (byte) ReadRam(0, pc);
+                        pc++;
+                        byte src = (byte) ReadRam(0, pc);
+                        SetRegister(dest, GetRegister(src));
+
+                        IncrementPC(3);
                     }
                     break;
                 case InstructionOpcode.ADD:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            a
+                            +
+                            b
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.SUB:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            a
+                            -
+                            b
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.MUL:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            a
+                            *
+                            b
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.DIV:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        if (b == 0)
+                        {
+                            SetRegister(
+                                str,
+                                0
+                            );
+                            RaiseError("DIV - DIV BY ZERO");
+                        }
+                        else
+                        {
+                            SetRegister(
+                                str,
+                                a
+                                /
+                                b
+                            );
+                        }
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.MOD:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        if (b == 0)
+                        {
+                            SetRegister(
+                                str,
+                                0
+                            );
+                            RaiseError("MOD - DIV BY ZERO");
+                        }
+                        else
+                        {
+                            SetRegister(
+                                str,
+                                a
+                                %
+                                b
+                            );
+                        }
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.AND:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            a
+                            &
+                            b
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.NAND:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            ~(a
+                            &
+                            b)
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.OR:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            a
+                            |
+                            b
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.NOR:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            ~(a
+                            |
+                            b)
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.XOR:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            a
+                            ^
+                            b
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.EQ:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            (a
+                            ==
+                            b) ? 1u : 0u
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.GT:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            (a
+                            >
+                            b) ? 1u : 0u
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.GTE:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            (a
+                            >=
+                            b) ? 1u : 0u
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.LT:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            (a
+                            <
+                            b) ? 1u : 0u
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.LTE:
                     {
-                        
+                        uint a = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        uint b = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte str = (byte) ReadRam(0, pc);
+
+                        SetRegister(
+                            str,
+                            (a
+                            <=
+                            b) ? 1u : 0u
+                        );
+
+                        IncrementPC(4);
                     }
                     break;
                 case InstructionOpcode.JMP:
                     {
+                        uint value = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
                         
+                        Registers[REG_PC] = value;
                     }
                     break;
                 case InstructionOpcode.JNZ:
                     {
+                        uint value = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
+                        pc += 4;
+                        uint cond = GetRegister((byte) ReadRam(0, pc));
                         
+                        if (cond != 0) Registers[REG_PC] = value;
                     }
                     break;
                 case InstructionOpcode.JZ:
                     {
+                        uint value = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
+                        pc += 4;
+                        uint cond = GetRegister((byte) ReadRam(0, pc));
                         
+                        if (cond == 0) Registers[REG_PC] = value;
+                    }
+                    break;
+                case InstructionOpcode.PUSH:
+                    {
+                        uint value = GetRegister((byte) ReadRam(0, pc));
+                        pc++;
+                        byte size = (byte) ReadRam(0, pc);
+
+                        if (size < 3) StackPush(value, (StackEntrySize) size);
+                        else RaiseError($"INVALID SIZE {size}");
                     }
                     break;
                 default:
                     {
-                        RaiseError("UNKNOWN INSTRUCTION");
+                        RaiseError($"UNKNOWN INSTRUCTION {opcode}");
                     }
                     break;
             }
