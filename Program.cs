@@ -1,5 +1,3 @@
-using System;
-
 namespace cpu
 {
     public static class Program
@@ -21,7 +19,7 @@ namespace cpu
                     case "1":
                     case "sim":
                     case "simulator":
-                        Simulator.Run();
+                        Simulator.Simulator.Run();
                         break;
                     case "2":
                     case "asm":

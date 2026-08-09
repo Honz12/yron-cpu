@@ -21,3 +21,33 @@ MEMORY MAP
 ```
 
 Technically the table can be extended to 1024 bytes to support `0x80` - `0xFF` interrupt reasons
+
+Predefined interrupt reasons
+
+Hex |Description
+----|---------------------
+`00`|Error description
+`01`|Device initialization
+`02`|Input interrupt
+
+### Error description
+
+(Not defined by standard)
+
+### Device initialization
+
+Register|Storing                    |Initial value
+--------|---------------------------|-------------
+`$03`   |Device ID                  |Device-specified
+`$04`   |Initialization finished    |`0`
+`$05`   |Memory needed              |Device-specified
+`$06`   |Memory address             |Software-specified
+
+When `$04` is set to one, the device initialization is done.
+
+### Input interrupt
+
+Register|Storing                    |Initial value
+--------|---------------------------|-------------
+`$03`   |Device ID                  |Device-specified
+`$04`   |Input value                |Device-specified

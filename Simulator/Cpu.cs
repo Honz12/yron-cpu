@@ -1,4 +1,4 @@
-namespace cpu
+namespace cpu.Simulator
 {
     public class CPU
     {

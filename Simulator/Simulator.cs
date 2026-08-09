@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace cpu
+namespace cpu.Simulator
 {
     public static class Simulator
     {
