@@ -47,6 +47,11 @@ namespace cpu
             JMP,
             JNZ,
             JZ,
+
+            // Stack operations
+
+            PUSH,
+            POP,
         }
 
         public enum StackEntrySize
@@ -224,17 +229,32 @@ namespace cpu
                     break;
                 case InstructionOpcode.LDb:
                     {
-                        
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
+
+                        uint value = ReadRam(0, address);
+                        IncrementPC(6);
                     }
                     break;
                 case InstructionOpcode.LDw:
                     {
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
                         
+                        uint value = ReadRam(0, address) | ReadRam(1, address);
+                        IncrementPC(6);
                     }
                     break;
                 case InstructionOpcode.LDd:
                     {
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
                         
+                        uint value = ReadRam(0, address) | ReadRam(1, address) | ReadRam(2, address) | ReadRam(3, address);
+                        IncrementPC(6);
                     }
                     break;
                 case InstructionOpcode.STb:
@@ -345,6 +365,11 @@ namespace cpu
                 case InstructionOpcode.JZ:
                     {
                         
+                    }
+                    break;
+                default:
+                    {
+                        RaiseError("UNKNOWN INSTRUCTION");
                     }
                     break;
             }
