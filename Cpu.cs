@@ -5,6 +5,9 @@ namespace cpu
         public enum InstructionOpcode
         {
             NOP,
+            INT,
+            CALL,
+            RET,
 
             // Memory management
 
@@ -159,7 +162,8 @@ namespace cpu
 
         private void RaiseError(string errorMessage)
         {
-            
+            Console.WriteLine(errorMessage);
+            RegisterDump();
         }
 
         public void RegisterDump()
@@ -192,6 +196,30 @@ namespace cpu
                 case InstructionOpcode.NOP:
                     {
                         IncrementPC(1);
+                    }
+                    break;
+                case InstructionOpcode.INT:
+                    {
+                        byte reason = (byte) ReadRam(0, pc);
+
+                        IncrementPC(2);
+                        
+                        StackPush(Registers[REG_PC], StackEntrySize.DWORD);
+
+                        CallInterrupt();
+                    }
+                    break;
+                case InstructionOpcode.CALL:
+                    {
+                        uint value = ReadRam(0, pc) | ReadRam(1, pc) | ReadRam(2, pc) | ReadRam(3, pc);
+
+                        IncrementPC(5);
+                        StackPush(Registers[REG_PC], StackEntrySize.DWORD);
+                    }
+                    break;
+                case InstructionOpcode.RET:
+                    {
+                        
                     }
                     break;
                 case InstructionOpcode.LDIb:
