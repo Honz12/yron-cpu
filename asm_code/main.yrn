@@ -13,8 +13,8 @@ jmp main
 %org 0x0400                     ; code section
 
 main:
+    ldib $10, 'A'
 .loop:
-    call lib_input_buffer_getc
     call lib_display_device_putc
     jmp .loop
 

@@ -68,6 +68,53 @@ namespace cpu.Simulator
             }
         }
 
+        public static bool[] ShowDeviceMenu()
+        {
+            bool[] selectedDevices = new bool[2];
+            int selectedIndex = 0;
+            bool confirmed = false;
+
+            Console.WriteLine("Select devices:");
+
+            while (!confirmed)
+            {
+                Console.Clear();
+                Console.WriteLine("Select devices:");
+                Console.WriteLine("Arrow keys move, Enter toggles, Tab confirms");
+
+                for (int i = 0; i < selectedDevices.Length; i++)
+                {
+                    bool isSelected = selectedDevices[i];
+                    string deviceName = i == 0 ? "Display device" : "Keyboard device";
+                    string arrow = i == selectedIndex ? ">" : " ";
+
+                    Console.WriteLine($"{arrow} [{(isSelected ? 'X' : ' ')}] {deviceName}");
+                }
+
+                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+
+                switch (keyInfo.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        selectedIndex = selectedIndex == 0 ? selectedDevices.Length - 1 : selectedIndex - 1;
+                        break;
+                    case ConsoleKey.DownArrow:
+                        selectedIndex = (selectedIndex + 1) % selectedDevices.Length;
+                        break;
+                    case ConsoleKey.Enter:
+                        selectedDevices[selectedIndex] = !selectedDevices[selectedIndex];
+                        break;
+                    case ConsoleKey.Tab:
+                        confirmed = true;
+                        break;
+                }
+            }
+
+            Console.Clear();
+
+            return selectedDevices;
+        }
+
         public static int RunFromArgs(string romPath)
         {
             if (!File.Exists(romPath))
@@ -82,8 +129,17 @@ namespace cpu.Simulator
 
             CPU cpu = new(1024, romBytes);
 
-            cpu.RegisterDevice(new Device.DisplayDevice());
-            cpu.RegisterDevice(new Device.KeyboardDevice());
+            bool[] selectedDevices = ShowDeviceMenu();
+
+            if (selectedDevices[0])
+            {
+                cpu.RegisterDevice(new Device.DisplayDevice());
+            }
+
+            if (selectedDevices[1])
+            {
+                cpu.RegisterDevice(new Device.KeyboardDevice());
+            }
 
             Console.WriteLine("Run in steps?");
 
