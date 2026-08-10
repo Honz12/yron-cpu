@@ -35,18 +35,18 @@ the file they came from.
 
 ## Preprocessor
 
-The assembler runs a small textual preprocessor before parsing. `.include`
-inserts another file, `.define` creates an object-like text macro.
+The assembler runs a small textual preprocessor before parsing. `%include`
+inserts another file, `%define` creates an object-like text macro.
 
-### `.define`
+### `%define`
 
-`.define <NAME> <text>` registers a macro. Every occurrence of `NAME` in
+`%define <NAME> <text>` registers a macro. Every occurrence of `NAME` in
 subsequent lines (including inside included files) is replaced by `<text>`.
 
 ```asm
-.define SCREEN 0x3000
-.define MSG "Hello; world"
-.define TWICE 2 * 8
+%define SCREEN 0x3000
+%define MSG "Hello; world"
+%define TWICE 2 * 8
 
     LDIw $04, SCREEN + 4
     LDIb $06, TWICE          ; -> 16
@@ -58,16 +58,16 @@ Rules:
   boundaries. Macro values are **not** expanded inside string or character
   literals.
 - Macro values are rescanned, so macros may reference other macros:
-  `.define A B` + `.define B 7` makes `A` expand to `7`. A macro that
+  `%define A B` + `%define B 7` makes `A` expand to `7`. A macro that
   (directly or indirectly) references itself is left unexpanded rather than
   looping forever.
 - Redefining a macro replaces the previous definition.
 
-### `.include`
+### `%include`
 
-`.include "file.asm"` textually inserts another source file at that point.
+`%include "file.asm"` textually inserts another source file at that point.
 Paths are resolved relative to the directory of the file containing the
-`.include` (falling back to the current directory for absolute/relative
+`%include` (falling back to the current directory for absolute/relative
 searches).
 
 Every file is included **at most once**: if the same file is included a second
@@ -75,8 +75,8 @@ time (directly or through another include), the second include is skipped.
 This also prevents include cycles.
 
 ```asm
-.include "defines.inc"   ; inserted here
-.include "defines.inc"   ; skipped, already included
+%include "defines.inc"   ; inserted here
+%include "defines.inc"   ; skipped, already included
 ```
 
 ## Syntax
@@ -89,7 +89,7 @@ a string or character literal is part of the literal, not a comment.
 ```asm
 ; this is a comment
 LDIb $03, 5 ; so is this
-.ascii "a;b" ; the first ';' is data
+%ascii "a;b" ; the first ';' is data
 ```
 
 ### Labels
@@ -111,6 +111,35 @@ loop:
     SUB $03, $0A, $03
     JNZ loop, $03
 ```
+
+### Local labels
+
+A local label is written `.name:` and binds to the most recent global label in
+the same file (NASM-style). This lets a routine reuse common names such as
+`.loop` or `.done` without collisions.
+
+```asm
+count_down:
+    LDIb $0A, 3
+.loop:
+    SUB $0A, $0B, $0A
+    JNZ .loop, $0A
+    JMP .done              ; forward reference
+.done:
+    RET
+```
+
+Rules:
+
+- `.name:` binds to the nearest preceding global label **in the same file**.
+  The same local name may be reused under a different global label, even in
+  the same file.
+- An included file starts with an empty local scope: its local labels never
+  bind to, or collide with, local labels in the including file.
+- Local labels are referenced as `.name` (e.g. in address operands or data
+  directives) and are case-sensitive like global labels.
+- Using a local label — defining or referencing it — before any global label
+  is an error.
 
 ### Registers
 
@@ -161,20 +190,22 @@ LDIb $04, (BASE + OFFSET) & 0xFF
 
 ### Directives
 
+Directives start with `%` and are case-insensitive.
+
 | Directive | Description |
 |-----------|-------------|
-| `.org <addr>` | Sets the current output position. Gaps are filled with zero bytes. Moving backwards is an error. |
-| `.byte <v>[, <v>...]` | Emits one 8-bit value per operand. String operands emit each character. |
-| `.word <v>[, <v>...]` | Emits one 16-bit little-endian value per operand. |
-| `.dword <v>[, <v>...]` | Emits one 32-bit little-endian value per operand. |
-| `.ascii "<str>"[, <v>...]` | Emits raw bytes (strings or 8-bit values), no terminator. |
-| `.asciz "<str>"[, <v>...]` | Same as `.ascii`, then emits a trailing `0` byte. |
-| `.align <n>[, <fill>]` | Advances to the next multiple of `<n>` (default fill byte `0`). |
+| `%org <addr>` | Sets the current output position. Gaps are filled with zero bytes. Moving backwards is an error. |
+| `%byte <v>[, <v>...]` | Emits one 8-bit value per operand. String operands emit each character. |
+| `%word <v>[, <v>...]` | Emits one 16-bit little-endian value per operand. |
+| `%dword <v>[, <v>...]` | Emits one 32-bit little-endian value per operand. |
+| `%ascii "<str>"[, <v>...]` | Emits raw bytes (strings or 8-bit values), no terminator. |
+| `%asciz "<str>"[, <v>...]` | Same as `%ascii`, then emits a trailing `0` byte. |
+| `%align <n>[, <fill>]` | Advances to the next multiple of `<n>` (default fill byte `0`). |
 
 ```asm
-.org 0x200          ; interrupt table
-.dword int_handler  ; interrupt 0 -> handler
-.org 0x300
+%org 0x200          ; interrupt table
+%dword int_handler  ; interrupt 0 -> handler
+%org 0x300
 int_handler:
     RET
 ```
@@ -183,10 +214,10 @@ String literals support the same escapes as character literals
 (`\n`, `\t`, `\r`, `\0`, `\\`, `\'`, `\"`):
 
 ```asm
-.asciz "Hello, world!"   ; bytes + trailing 0x00
-.ascii "a;b"             ; bytes only
-.byte "AB", 0x0D, 0x0A
-.align 4                 ; pad to next 4-byte boundary
+%asciz "Hello, world!"   ; bytes + trailing 0x00
+%ascii "a;b"             ; bytes only
+%byte "AB", 0x0D, 0x0A
+%align 4                 ; pad to next 4-byte boundary
 ```
 
 ### PUSH / POP sizes
@@ -232,7 +263,7 @@ Mnemonics are case-insensitive. See `isa.md` for the full instruction set.
 ; Call a routine that increments $05 by 1, then halt the simulator
     LDIb $05, 42
     CALL add_one         ; $05 = 42 + 1 = 43
-    .byte 0xFF           ; halt (unknown instruction)
+    %byte 0xFF           ; halt (unknown instruction)
 add_one:
     LDIb $06, 1
     ADD $05, $06, $05
@@ -245,4 +276,4 @@ executing `0xFF`, an unknown opcode, which raises a CPU error.
 ## Limits
 
 The maximum ROM size is 64 kilobytes (the simulator's default RAM size).
-`.org` addresses, `.align` targets and the final image must not exceed this.
+`%org` addresses, `%align` targets and the final image must not exceed this.

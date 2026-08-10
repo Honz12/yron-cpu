@@ -18,6 +18,7 @@ namespace Assembler
             public string File = "";
             public int Line;
             public string? Label;
+            public string? LocalScope;
             public string? Opcode;
             public bool IsDirective;
             public List<string> Operands = new();
@@ -65,14 +66,14 @@ namespace Assembler
                     if (text.Length == 0) continue;
 
                     string first = FirstWord(text);
-                    if (first.Length > 1 && first[0] == '.')
+                    if (first.Length > 1 && first[0] == '%')
                     {
                         switch (first.ToLowerInvariant())
                         {
-                            case ".include":
+                            case "%include":
                                 IncludeFile(ParseIncludePath(text, file, lineNo), baseDir, output, file, lineNo);
                                 continue;
-                            case ".define":
+                            case "%define":
                                 DefineMacro(text, file, lineNo);
                                 continue;
                         }
@@ -107,7 +108,7 @@ namespace Assembler
                 string rest = text.Substring(FirstWord(text).Length).Trim();
                 Match match = Regex.Match(rest, @"^([A-Za-z_][A-Za-z0-9_]*)\s*(.*)$");
                 if (!match.Success)
-                    throw new Exception($"{Where(file, lineNo)}: '.define' requires a macro name");
+                    throw new Exception($"{Where(file, lineNo)}: '%define' requires a macro name");
 
                 _macros[match.Groups[1].Value] = match.Groups[2].Value.Trim();
             }
@@ -116,13 +117,13 @@ namespace Assembler
             {
                 string rest = text.Substring(FirstWord(text).Length).Trim();
                 if (rest.Length == 0)
-                    throw new Exception($"{Where(file, lineNo)}: '.include' requires a file path");
+                    throw new Exception($"{Where(file, lineNo)}: '%include' requires a file path");
 
                 if (rest.Length >= 2 && rest[0] == '"' && rest[^1] == '"')
                     rest = rest.Substring(1, rest.Length - 2);
 
                 if (rest.Length == 0)
-                    throw new Exception($"{Where(file, lineNo)}: '.include' requires a file path");
+                    throw new Exception($"{Where(file, lineNo)}: '%include' requires a file path");
 
                 return rest;
             }
@@ -214,15 +215,47 @@ namespace Assembler
         {
             List<Token> tokens = new();
 
+            List<(string File, string? Global)> frames = new();
+            string? lastFile = null;
+
             foreach (SourceLine sourceLine in lines)
             {
                 string line = sourceLine.Text;
-                Token token = new() { File = sourceLine.File, Line = sourceLine.Line };
 
-                Match labelMatch = Regex.Match(line, @"^([A-Za-z_][A-Za-z0-9_]*)\s*:");
+                if (frames.Count == 0)
+                {
+                    frames.Add((sourceLine.File, null));
+                }
+                else if (sourceLine.File != lastFile)
+                {
+                    if (frames.Count >= 2 && sourceLine.File == frames[^2].File)
+                        frames.RemoveAt(frames.Count - 1);
+                    else
+                        frames.Add((sourceLine.File, null));
+                }
+
+                lastFile = sourceLine.File;
+                string? currentGlobal = frames[^1].Global;
+
+                Token token = new() { File = sourceLine.File, Line = sourceLine.Line, LocalScope = currentGlobal };
+
+                Match labelMatch = Regex.Match(line, @"^\.?([A-Za-z_][A-Za-z0-9_]*)\s*:");
                 if (labelMatch.Success)
                 {
-                    token.Label = labelMatch.Groups[1].Value;
+                    string name = labelMatch.Groups[1].Value;
+                    if (line[0] == '.')
+                    {
+                        if (currentGlobal == null)
+                            throw new Exception($"{Where(token)}: local label '.{name}' used before any global label");
+                        token.Label = currentGlobal + "." + name;
+                        token.LocalScope = currentGlobal;
+                    }
+                    else
+                    {
+                        token.Label = name;
+                        token.LocalScope = name;
+                        frames[^1] = (sourceLine.File, name);
+                    }
                     line = line.Substring(labelMatch.Length).Trim();
                 }
 
@@ -236,7 +269,7 @@ namespace Assembler
                 string first = sep < 0 ? line : line.Substring(0, sep);
                 string rest = sep < 0 ? "" : line.Substring(sep);
 
-                if (first.StartsWith("."))
+                if (first.StartsWith("%"))
                 {
                     token.IsDirective = true;
                     token.Opcode = first.Substring(1).ToLowerInvariant();
@@ -336,7 +369,7 @@ namespace Assembler
                             address = AlignAddress(address, EvalValue(RequireAtLeastOne(token), token, labels), token);
                             break;
                         default:
-                            throw new Exception($"{Where(token)}: unknown directive '.{token.Opcode}'");
+                            throw new Exception($"{Where(token)}: unknown directive '%{token.Opcode}'");
                     }
                 }
                 else if (token.Opcode != null)
@@ -372,13 +405,13 @@ namespace Assembler
         private static long AlignAddress(long value, long align, Token token)
         {
             if (align <= 0)
-                throw new Exception($"{Where(token)}: '.align' requires a positive alignment");
+                throw new Exception($"{Where(token)}: '%align' requires a positive alignment");
 
             long remainder = value % align;
             long target = remainder == 0 ? value : value + (align - remainder);
 
             if (target > MaxRomSize)
-                throw new Exception($"{Where(token)}: '.align' target {target} exceeds max ROM size {MaxRomSize}");
+                throw new Exception($"{Where(token)}: '%align' target {target} exceeds max ROM size {MaxRomSize}");
 
             return target;
         }
@@ -445,7 +478,7 @@ namespace Assembler
         private static void EnsureAddress(long newAddress, Token token, List<byte> output)
         {
             if (newAddress < output.Count)
-                throw new Exception($"{Where(token)}: address moved backwards (overlapping '.org' or data)");
+                throw new Exception($"{Where(token)}: address moved backwards (overlapping '%org' or data)");
             if (newAddress > MaxRomSize)
                 throw new Exception($"{Where(token)}: address {newAddress} exceeds max ROM size {MaxRomSize}");
 
@@ -457,7 +490,7 @@ namespace Assembler
             if (operand.StartsWith("\""))
             {
                 if (width != 1)
-                    throw new Exception($"{Where(token)}: string literal not allowed in '.{token.Opcode}' (only 8-bit data)");
+                    throw new Exception($"{Where(token)}: string literal not allowed in '%{token.Opcode}' (only 8-bit data)");
                 foreach (byte b in DecodeString(operand, token))
                     output.Add(b);
                 return;
@@ -586,7 +619,7 @@ namespace Assembler
         private static string RequireAtLeastOne(Token token)
         {
             if (token.Operands.Count < 1)
-                throw new Exception($"{Where(token)}: '.{token.Opcode}' expected at least 1 operand");
+                throw new Exception($"{Where(token)}: '%{token.Opcode}' expected at least 1 operand");
             return token.Operands[0];
         }
 
@@ -793,6 +826,26 @@ namespace Assembler
                 {
                     while (_pos < _s.Length && char.IsDigit(_s[_pos])) _pos++;
                     return long.Parse(_s.Substring(start, _pos - start), CultureInfo.InvariantCulture);
+                }
+
+                if (_pos < _s.Length && _s[_pos] == '.')
+                {
+                    _pos++;
+                    int nameStart = _pos;
+                    while (_pos < _s.Length && (char.IsLetterOrDigit(_s[_pos]) || _s[_pos] == '_')) _pos++;
+                    if (_pos == nameStart)
+                        throw new Exception($"{Where(_token)}: invalid value '{_s.Trim()}'");
+
+                    string name = "." + _s.Substring(nameStart, _pos - nameStart);
+
+                    if (_token.LocalScope == null)
+                        throw new Exception($"{Where(_token)}: local label '{name}' used before any global label");
+
+                    string full = _token.LocalScope + name;
+                    if (_labels != null && _labels.TryGetValue(full, out int address))
+                        return address;
+
+                    throw new Exception($"{Where(_token)}: undefined symbol '{full}'");
                 }
 
                 if (_pos < _s.Length && (char.IsLetter(_s[_pos]) || _s[_pos] == '_'))

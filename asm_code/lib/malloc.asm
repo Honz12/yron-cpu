@@ -1,5 +1,5 @@
 _value_lib_malloc_pointer:
-    .dword 0x00010000
+    %dword 0x00010000
     
 ;
 ; Initializes the lib_malloc pointer
