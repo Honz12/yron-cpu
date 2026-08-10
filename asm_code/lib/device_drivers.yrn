@@ -36,6 +36,19 @@ device_init_interrupt:
 
     jmp .init_done
 
+device_input_interrupt:
+    ; $03 - Device ID
+    ; $04 - Input value
+
+    push $10, DWORD
+
+    mov $10, $04                    ; print the input as char out
+    call lib_display_device_putc
+
+    pop $10, DWORD
+
+    ret
+
 ;
 ; Prints a ASCII character to the console
 ; Parameters:

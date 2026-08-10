@@ -26,6 +26,14 @@ namespace cpu.Simulator.Device
 
         public void Tick(CPU cpu)
         {
+            if (DidInit)
+            {
+                if (Console.KeyAvailable)
+                {
+                    cpu.SetRegister(0x03, DeviceId);
+                    cpu.SetRegister(0x04, (uint) Console.Read());
+                }
+            }
         }
     }
 }
