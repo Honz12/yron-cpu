@@ -2,8 +2,23 @@ namespace cpu
 {
     public static class Program
     {
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
+            if (args.Length >= 2)
+            {
+                switch (args[0].ToLowerInvariant())
+                {
+                    case "asm":
+                    case "assembler":
+                    case "2":
+                        return Assembler.AssemblerApp.RunFromArgs(args);
+                    case "sim":
+                    case "simulator":
+                    case "1":
+                        return Simulator.Simulator.RunFromArgs(args[1]);
+                }
+            }
+
             while (true)
             {
                 Console.WriteLine("What would you like to run?");
@@ -29,7 +44,7 @@ namespace cpu
                     case "q":
                     case "quit":
                     case "exit":
-                        return;
+                        return 0;
                     default:
                         Console.WriteLine("Unknown choice");
                         break;

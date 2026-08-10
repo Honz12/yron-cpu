@@ -11,10 +11,15 @@ namespace cpu.Simulator
             string romPath = Console.ReadLine()?.Trim() ?? "";
             if (romPath.Length == 0) romPath = "rom.bin";
 
+            RunFromArgs(romPath);
+        }
+
+        public static int RunFromArgs(string romPath)
+        {
             if (!File.Exists(romPath))
             {
                 Console.WriteLine($"File '{romPath}' does not exist");
-                return;
+                return 1;
             }
 
             byte[] romBytes = File.ReadAllBytes(romPath);
@@ -22,6 +27,8 @@ namespace cpu.Simulator
             Console.WriteLine($"Loaded rom of {romBytes.Length} byte{(romBytes.Length != 1 ? "s" : "")}");
 
             CPU cpu = new(64, romBytes);
+
+            cpu.RegisterDevice(new Device.DisplayDevice());
 
             try
             {
@@ -34,6 +41,8 @@ namespace cpu.Simulator
             {
                 Console.WriteLine($"CPU ERROR: {e.Message}");
             }
+
+            return 0;
         }
     }
 }

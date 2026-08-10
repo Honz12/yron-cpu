@@ -19,24 +19,83 @@ Output file (default: rom.bin):
 Assembled hello.asm -> rom.bin (37 bytes)
 ```
 
-Assembly errors are reported with a line number, e.g. `ASSEMBLY ERROR: line 7:
-invalid register '$32'`.
+The assembler (and simulator) can also be driven non-interactively from the
+command line:
+
+```
+cpu asm <source.asm> [output.bin]
+cpu sim <rom.bin>
+```
+
+## Errors
+
+Assembly errors are reported with the source file and line number, e.g.
+`ASSEMBLY ERROR: hello.asm:7: invalid register '$32'`. Included files report
+the file they came from.
+
+## Preprocessor
+
+The assembler runs a small textual preprocessor before parsing. `.include`
+inserts another file, `.define` creates an object-like text macro.
+
+### `.define`
+
+`.define <NAME> <text>` registers a macro. Every occurrence of `NAME` in
+subsequent lines (including inside included files) is replaced by `<text>`.
+
+```asm
+.define SCREEN 0x3000
+.define MSG "Hello; world"
+.define TWICE 2 * 8
+
+    LDIw $04, SCREEN + 4
+    LDIb $06, TWICE          ; -> 16
+```
+
+Rules:
+
+- Macro names are case-sensitive identifiers and are matched on word
+  boundaries. Macro values are **not** expanded inside string or character
+  literals.
+- Macro values are rescanned, so macros may reference other macros:
+  `.define A B` + `.define B 7` makes `A` expand to `7`. A macro that
+  (directly or indirectly) references itself is left unexpanded rather than
+  looping forever.
+- Redefining a macro replaces the previous definition.
+
+### `.include`
+
+`.include "file.asm"` textually inserts another source file at that point.
+Paths are resolved relative to the directory of the file containing the
+`.include` (falling back to the current directory for absolute/relative
+searches).
+
+Every file is included **at most once**: if the same file is included a second
+time (directly or through another include), the second include is skipped.
+This also prevents include cycles.
+
+```asm
+.include "defines.inc"   ; inserted here
+.include "defines.inc"   ; skipped, already included
+```
 
 ## Syntax
 
 ### Comments
 
-`;` starts a comment. Everything after it on the line is ignored.
+`;` starts a comment. Everything after it on the line is ignored. A `;` inside
+a string or character literal is part of the literal, not a comment.
 
 ```asm
 ; this is a comment
 LDIb $03, 5 ; so is this
+.ascii "a;b" ; the first ';' is data
 ```
 
 ### Labels
 
 A label is an identifier followed by a `:` and resolves to the address of the
-byte it precedes. Labels are case-insensitive and can be referenced by any
+byte it precedes. Labels are **case-sensitive** and can be referenced by any
 instruction that takes an address (`JMP`, `CALL`, `JNZ`, `JZ`) or by a data
 directive.
 
@@ -49,13 +108,14 @@ Labels may appear on their own line or in front of an instruction:
 
 ```asm
 loop:
-    SUB $03, $01, $03
+    SUB $03, $0A, $03
     JNZ loop, $03
 ```
 
 ### Registers
 
 Registers are written as `$` followed by two hex digits, or by an alias.
+Register aliases are case-insensitive.
 
 | Syntax      | Register |
 |-------------|----------|
@@ -70,26 +130,46 @@ MOV $0B, $0A
 MOV ${sp}, $03
 ```
 
-### Values
+Registers outside `$00`-`$1F` are rejected at assembly time.
 
-Values can be decimal, hex (`0x` prefix) or binary (`0b` prefix).
+### Values and expressions
+
+Operands may be decimal, hex (`0x` prefix), binary (`0b` prefix), a character
+literal (`'A'`, `'\n'`, `'\t'`, `'\r'`, `'\0'`, `'\\'`, `'\''`, `'\"'`), a
+label, or an arbitrary arithmetic expression.
 
 ```asm
-LDIb $04, 255    ; decimal
-LDIb $04, 0xFF   ; hex
-LDIb $04, 0b11111111 ; binary
+LDIb $04, 255            ; decimal
+LDIb $04, 0xFF           ; hex
+LDIb $04, 0b11111111     ; binary
+LDIb $04, 'A'            ; character literal -> 0x41
+LDIw $04, (2 + 3) * 4    ; expression -> 20
+LDIb $05, 1 << 8         ; shift -> 256
 ```
 
-Addresses may be a value or a label.
+Supported operators, lowest to highest precedence: `|`, `^`, `&`, `<<` `>>`,
+`+` `-`, `*` `/` `%`, unary `-` `~` `+`. Parentheses group. Division by zero
+is an error. Labels are resolved case-sensitively.
+
+Operands are separated by commas (the separator inside a string literal is
+ignored), so expressions may contain spaces:
+
+```asm
+SUB $03, $0A, $03
+LDIb $04, (BASE + OFFSET) & 0xFF
+```
 
 ### Directives
 
 | Directive | Description |
 |-----------|-------------|
-| `.org <addr>` | Sets the current output position. Gaps are filled with zero bytes. |
-| `.byte <v>[, <v>...]` | Emits one 8-bit value per operand. |
+| `.org <addr>` | Sets the current output position. Gaps are filled with zero bytes. Moving backwards is an error. |
+| `.byte <v>[, <v>...]` | Emits one 8-bit value per operand. String operands emit each character. |
 | `.word <v>[, <v>...]` | Emits one 16-bit little-endian value per operand. |
 | `.dword <v>[, <v>...]` | Emits one 32-bit little-endian value per operand. |
+| `.ascii "<str>"[, <v>...]` | Emits raw bytes (strings or 8-bit values), no terminator. |
+| `.asciz "<str>"[, <v>...]` | Same as `.ascii`, then emits a trailing `0` byte. |
+| `.align <n>[, <fill>]` | Advances to the next multiple of `<n>` (default fill byte `0`). |
 
 ```asm
 .org 0x200          ; interrupt table
@@ -97,6 +177,16 @@ Addresses may be a value or a label.
 .org 0x300
 int_handler:
     RET
+```
+
+String literals support the same escapes as character literals
+(`\n`, `\t`, `\r`, `\0`, `\\`, `\'`, `\"`):
+
+```asm
+.asciz "Hello, world!"   ; bytes + trailing 0x00
+.ascii "a;b"             ; bytes only
+.byte "AB", 0x0D, 0x0A
+.align 4                 ; pad to next 4-byte boundary
 ```
 
 ### PUSH / POP sizes
@@ -155,4 +245,4 @@ executing `0xFF`, an unknown opcode, which raises a CPU error.
 ## Limits
 
 The maximum ROM size is 64 kilobytes (the simulator's default RAM size).
-`.org` addresses and the final image must not exceed this.
+`.org` addresses, `.align` targets and the final image must not exceed this.

@@ -1,3 +1,5 @@
+using cpu.Simulator.Device;
+
 namespace cpu.Simulator
 {
     public class CPU
@@ -68,8 +70,16 @@ namespace cpu.Simulator
 
         public const int INTERRUPT_TABLE_START_ADDRESS = 0x200;
 
+        public const int INTERRUPT_DEVICE_INIT = 0x01;
+
         public uint[] Registers = new uint[32];
+
+        private List<IDevice> Devices = [];
+        private bool InitializingDevice = false;
+        private int InitDeviceIndex = 0;
         private byte[] Ram;
+
+        public bool Halted = false;
 
         public CPU(int ramSizeKb, byte[] romBytes)
         {
@@ -83,6 +93,19 @@ namespace cpu.Simulator
             Registers[REG_SP] = (uint) Ram.Length;
         
             Console.WriteLine($"CPU initialized with {ramSizeKb} kilobyte{(ramSizeKb != 1 ? "s" : "")} of RAM");
+        }
+
+        public void RegisterDevice(IDevice device)
+        {
+            if (!InitializingDevice)
+            {
+                Devices.Add(device);
+                device.BeforeInterrupt(this);
+
+                InitializingDevice = true;
+
+                CallInterrupt(INTERRUPT_DEVICE_INIT);
+            }
         }
 
         public void WriteRam(uint val, byte b, uint address)
@@ -203,6 +226,38 @@ namespace cpu.Simulator
             uint pc = Registers[REG_PC];
             InstructionOpcode opcode = (InstructionOpcode) ReadRam(0, pc);
             pc++;
+
+            if (InitDeviceIndex < Devices.Count)
+            {
+                if (InitializingDevice)
+                {
+                    if (GetRegister(0x04) != 0)
+                    {
+                        Devices[InitDeviceIndex].AfterInterrupt(this);
+                        InitDeviceIndex++;
+
+                        InitializingDevice = false;
+                    }
+                }
+                else
+                {
+                    SetRegister(0x03, Devices[InitDeviceIndex].DeviceId);
+                    SetRegister(0x04, 0);
+
+                    Devices[InitDeviceIndex].BeforeInterrupt(this);
+
+                    Console.WriteLine($"INIT DEVICE {Devices[InitDeviceIndex].DisplayName} [ID:{Devices[InitDeviceIndex].DeviceId:X8}]");
+
+                    CallInterrupt(INTERRUPT_DEVICE_INIT);
+
+                    InitializingDevice = true;
+                }
+            }
+
+            foreach (IDevice device in Devices)
+            {
+                device.Tick(this);
+            }
 
             switch (opcode)
             {
