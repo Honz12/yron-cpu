@@ -3,6 +3,12 @@
 _value_display_device_buffer:
     %dword 0
 
+_value_input_buffer:
+    %fill 256
+
+_value_input_pointer:
+    %word 0
+
 device_init_interrupt:
     ; $03 - Device ID
     ; $04 - Init completed

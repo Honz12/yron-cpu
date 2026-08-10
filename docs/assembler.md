@@ -201,6 +201,7 @@ Directives start with `%` and are case-insensitive.
 | `%ascii "<str>"[, <v>...]` | Emits raw bytes (strings or 8-bit values), no terminator. |
 | `%asciz "<str>"[, <v>...]` | Same as `%ascii`, then emits a trailing `0` byte. |
 | `%align <n>[, <fill>]` | Advances to the next multiple of `<n>` (default fill byte `0`). |
+| `%fill <numBytes>[, <fill>]` | Emits `<numBytes>` copies of `<fill>` (default `0`). |
 
 ```asm
 %org 0x200          ; interrupt table
@@ -218,6 +219,8 @@ String literals support the same escapes as character literals
 %ascii "a;b"             ; bytes only
 %byte "AB", 0x0D, 0x0A
 %align 4                 ; pad to next 4-byte boundary
+%fill 16, 0x11           ; 16 bytes of 0x11
+%fill 8                  ; 8 bytes of 0x00
 ```
 
 ### PUSH / POP sizes

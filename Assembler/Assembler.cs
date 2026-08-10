@@ -368,6 +368,12 @@ namespace Assembler
                         case "align":
                             address = AlignAddress(address, EvalValue(RequireAtLeastOne(token), token, labels), token);
                             break;
+                        case "fill":
+                            RequireAtLeastOne(token);
+                            if (token.Operands.Count > 2)
+                                throw new Exception($"{Where(token)}: '%fill' expected <numBytes>[, <fill>]");
+                            address += EvalValue(token.Operands[0], token, labels);
+                            break;
                         default:
                             throw new Exception($"{Where(token)}: unknown directive '%{token.Opcode}'");
                     }
@@ -459,6 +465,21 @@ namespace Assembler
                                 EmitByte(EvalValue(token.Operands[1], token, labels), token, output);
                             while (output.Count < AlignAddress(output.Count, align, token))
                                 output.Add(fill);
+                            break;
+                        case "fill":
+                            RequireAtLeastOne(token);
+                            if (token.Operands.Count > 2)
+                                throw new Exception($"{Where(token)}: '%fill' expected <numBytes>[, <fill>]");
+                            long fillCount = EvalValue(token.Operands[0], token, labels);
+                            if (fillCount < 0)
+                                throw new Exception($"{Where(token)}: '%fill' count must be non-negative");
+                            long fillValue = token.Operands.Count > 1
+                                ? EvalValue(token.Operands[1], token, labels)
+                                : 0;
+                            if (fillValue < -128 || fillValue > 255)
+                                throw new Exception($"{Where(token)}: value {fillValue} out of range for a byte (-128..255)");
+                            while (fillCount-- > 0)
+                                output.Add((byte) fillValue);
                             break;
                     }
                     continue;
