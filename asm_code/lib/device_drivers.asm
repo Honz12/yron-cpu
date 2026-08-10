@@ -1,7 +1,7 @@
-.include "malloc.asm"
+%include "malloc.asm"
 
 _value_display_device_buffer:
-    
+    %dword 0
 
 device_init_interrupt:
     ; $03 - Device ID

@@ -5,6 +5,8 @@ namespace cpu.Simulator
 {
     public static class Simulator
     {
+        public static bool SafeMode = true;
+
         public static void Run()
         {
             Console.Write("ROM path (default: rom.bin): ");
@@ -12,6 +14,58 @@ namespace cpu.Simulator
             if (romPath.Length == 0) romPath = "rom.bin";
 
             RunFromArgs(romPath);
+        }
+
+        public static void CpuProcess(CPU cpu, bool runInSteps)
+        {
+            if (runInSteps)
+            {
+                Console.Clear();
+                cpu.RegisterDump();
+            }
+            
+            while (!cpu.Halted)
+            {
+                if (runInSteps)
+                {
+                    ConsoleKey key = Console.ReadKey(true).Key;
+                    if (key == ConsoleKey.Escape)
+                    {
+                        break;
+                    }
+                    else if (key == ConsoleKey.D)
+                    {
+                        Console.Write("RAM start address: ");
+
+                        _ = uint.TryParse(Console.ReadLine(), out uint startAddr);
+
+                        Console.Write("Bytes: ");
+
+                        _ = uint.TryParse(Console.ReadLine(), out uint bytesNum);
+
+                        Console.Clear();
+
+                        for (int i = 0; i < bytesNum; i++)
+                        {
+                            Console.Write($"{cpu.ReadRam(0, (uint) (i + startAddr)):X2} ");
+                        }
+
+                        Console.WriteLine("\nAny to continue...");
+
+                        Console.ReadKey();
+                    }
+                    else
+                    {
+                        Console.Clear();
+                        cpu.RunInst();
+                        cpu.RegisterDump();
+                    }
+                }
+                else
+                {
+                    cpu.RunInst();
+                }
+            }
         }
 
         public static int RunFromArgs(string romPath)
@@ -26,7 +80,7 @@ namespace cpu.Simulator
 
             Console.WriteLine($"Loaded rom of {romBytes.Length} byte{(romBytes.Length != 1 ? "s" : "")}");
 
-            CPU cpu = new(64, romBytes);
+            CPU cpu = new(1024, romBytes);
 
             cpu.RegisterDevice(new Device.DisplayDevice());
             cpu.RegisterDevice(new Device.KeyboardDevice());
@@ -35,60 +89,20 @@ namespace cpu.Simulator
 
             bool runInSteps = Console.ReadKey().Key == ConsoleKey.Y;
 
-            try
+            if (SafeMode)
             {
-                if (runInSteps)
+                try
                 {
-                    Console.Clear();
-                    cpu.RegisterDump();
+                    CpuProcess(cpu, runInSteps);
                 }
-                
-                while (!cpu.Halted)
+                catch (Exception e)
                 {
-                    if (runInSteps)
-                    {
-                        ConsoleKey key = Console.ReadKey(true).Key;
-                        if (key == ConsoleKey.Escape)
-                        {
-                            break;
-                        }
-                        else if (key == ConsoleKey.D)
-                        {
-                            Console.Write("RAM start address: ");
-
-                            _ = uint.TryParse(Console.ReadLine(), out uint startAddr);
-
-                            Console.Write("Bytes: ");
-
-                            _ = uint.TryParse(Console.ReadLine(), out uint bytesNum);
-
-                            Console.Clear();
-
-                            for (int i = 0; i < bytesNum; i++)
-                            {
-                                Console.Write($"{cpu.ReadRam(0, (uint) (i + startAddr)):X2} ");
-                            }
-
-                            Console.WriteLine("\nAny to continue...");
-
-                            Console.ReadKey();
-                        }
-                        else
-                        {
-                            Console.Clear();
-                            cpu.RunInst();
-                            cpu.RegisterDump();
-                        }
-                    }
-                    else
-                    {
-                        cpu.RunInst();
-                    }
+                    Console.WriteLine($"CPU ERROR: {e.Message}");
                 }
             }
-            catch (Exception e)
+            else
             {
-                Console.WriteLine($"CPU ERROR: {e.Message}");
+                CpuProcess(cpu, runInSteps);
             }
 
             return 0;

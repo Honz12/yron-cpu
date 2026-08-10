@@ -1,1 +1,2 @@
-.include "malloc.asm"
+%include "malloc.asm"
+%include "device_drivers.asm"
