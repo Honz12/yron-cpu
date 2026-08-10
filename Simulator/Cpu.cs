@@ -97,15 +97,7 @@ namespace cpu.Simulator
 
         public void RegisterDevice(IDevice device)
         {
-            if (!InitializingDevice)
-            {
-                Devices.Add(device);
-                device.BeforeInterrupt(this);
-
-                InitializingDevice = true;
-
-                CallInterrupt(INTERRUPT_DEVICE_INIT);
-            }
+            Devices.Add(device);
         }
 
         public void WriteRam(uint val, byte b, uint address)
@@ -226,20 +218,20 @@ namespace cpu.Simulator
             uint pc = Registers[REG_PC];
             InstructionOpcode opcode = (InstructionOpcode) ReadRam(0, pc);
             pc++;
+            if (InitializingDevice)
+            {
+                if (GetRegister(0x04) != 0)
+                {
+                    Devices[InitDeviceIndex].AfterInterrupt(this);
+                    InitDeviceIndex++;
+
+                    InitializingDevice = false;
+                }
+            }
 
             if (InitDeviceIndex < Devices.Count)
             {
-                if (InitializingDevice)
-                {
-                    if (GetRegister(0x04) != 0)
-                    {
-                        Devices[InitDeviceIndex].AfterInterrupt(this);
-                        InitDeviceIndex++;
-
-                        InitializingDevice = false;
-                    }
-                }
-                else
+                if (!InitializingDevice)
                 {
                     SetRegister(0x03, Devices[InitDeviceIndex].DeviceId);
                     SetRegister(0x04, 0);
@@ -251,6 +243,7 @@ namespace cpu.Simulator
                     CallInterrupt(INTERRUPT_DEVICE_INIT);
 
                     InitializingDevice = true;
+                    return;
                 }
             }
 

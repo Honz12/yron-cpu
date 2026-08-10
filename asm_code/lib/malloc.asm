@@ -1,22 +1,6 @@
 _value_lib_malloc_pointer:
-    .dword 0
-
-
-;
-; Initializes the lib_malloc pointer
-; Parameters:
-;   $10 - address
-;
-lib_init_malloc:
-    push $11, DWORD
-
-    ldid $11, _value_lib_malloc_pointer
-    std $10, $11
-
-    pop $11, DWORD
-
-    ret
-
+    .dword 0x00010000
+    
 ;
 ; Initializes the lib_malloc pointer
 ; Parameters:

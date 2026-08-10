@@ -6,13 +6,10 @@ jmp main
 
 .org 0x0200                     ; interrupt table section
 
-.dword error_interrupt
+.dword 0
 .dword device_init_interrupt
 
 .org 0x0400                     ; code section
-
-error_interrupt:
-    ret
 
 device_init_interrupt:
     ; $03 - Device ID
@@ -24,16 +21,12 @@ device_init_interrupt:
     call lib_malloc
     mov $06, $11
 
+    ldib $04, 1
+
     ret
 
 main:
-    ; initialize lib_malloc
-    ldid $10, free_ram
-    call lib_init_malloc
-
     jmp halt
 
 halt:
     jmp halt
-
-free_ram:
