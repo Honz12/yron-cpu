@@ -53,6 +53,9 @@ namespace cpu.Simulator
                         Console.WriteLine("\nAny to continue...");
 
                         Console.ReadKey();
+
+                        Console.Clear();
+                        cpu.RegisterDump();
                     }
                     else
                     {

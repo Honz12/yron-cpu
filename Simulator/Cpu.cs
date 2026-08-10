@@ -81,6 +81,8 @@ namespace cpu.Simulator
 
         public bool Halted = false;
 
+        public uint RamLength => (uint) Ram.Length;
+
         public CPU(int ramSizeKb, byte[] romBytes)
         {
             Ram = new byte[ramSizeKb * 1024];
@@ -192,6 +194,11 @@ namespace cpu.Simulator
                 Console.WriteLine($"| {i:X2}  | {value:D10} | {value:X8} | {alias,-14} |");
                 i++;
             }
+
+            uint pc = Registers[REG_PC];
+            Console.WriteLine();
+            Console.WriteLine($"NEXT INSTRUCTION @0x{pc:X8}");
+            Console.WriteLine($"  {Decompiler.Decompile(this, pc)}");
         }
 
         public void CallInterrupt(byte reason)
