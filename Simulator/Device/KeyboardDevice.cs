@@ -30,13 +30,15 @@ namespace cpu.Simulator.Device
             {
                 if (Console.KeyAvailable)
                 {
-                    uint read = (uint) Console.Read();
+                    uint read = Console.ReadKey(true).KeyChar;
                     if (read == 17) // CTRL+Q
                     {
                         cpu.Halted = true;
                     }
                     cpu.SetRegister(0x03, DeviceId);
                     cpu.SetRegister(0x04, read);
+
+                    cpu.CallInterrupt(0x02);
                 }
             }
         }

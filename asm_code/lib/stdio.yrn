@@ -1,0 +1,49 @@
+%include "device_drivers.yrn"
+
+;
+; Prints a ASCII character to the console
+; Parameters:
+;   $10 - character to be printed
+;
+%define lib_putc lib_display_device_putc
+
+;
+; Prints a ASCII null-terminated string to the console
+; Parameters:
+;   $10 - string pointer
+;
+lib_puts:
+    push $10, DWORD
+    push $11, DWORD
+
+    mov $11, $10                ; `$11` is now the string pointer
+    
+.loop:
+    ldb $10, $11
+    jz .end, $10                ; check for null terminator
+    call lib_putc
+
+    ldib $10, 1
+    add $11, $10, $11
+
+    jmp .loop
+
+.end:
+    pop $11, DWORD
+    pop $10, DWORD
+
+    ret
+
+;
+; Reads a single character from the input buffer
+; If the buffer is empty, returns 0x00
+; Returns:
+;   $10 - charcter typed
+;
+lib_getc:
+.loop:
+    call lib_input_buffer_getc
+    jz .loop, $10
+    
+.end:
+    ret

@@ -2,8 +2,6 @@
 
 jmp main
 
-%include "lib/.yrn"
-
 %org 0x0200                     ; interrupt table section
 
 %dword 0
@@ -12,10 +10,17 @@ jmp main
 
 %org 0x0400                     ; code section
 
+%include "lib/stdio.yrn"
+
+welcome_message:
+    %asciz "Hello world\n"            ; welcome message
+
 main:
-    ldib $10, 'A'
 .loop:
-    call lib_display_device_putc
+    call lib_getc
+
+    ldid $10, welcome_message
+    call lib_puts
     jmp .loop
 
 halt:

@@ -72,6 +72,8 @@ namespace cpu.Simulator
 
         public const int INTERRUPT_DEVICE_INIT = 0x01;
 
+        private const int MAX_PC_HISTORY = 32;
+
         public uint[] Registers = new uint[32];
 
         private List<IDevice> Devices = [];
@@ -82,6 +84,8 @@ namespace cpu.Simulator
         public bool Halted = false;
 
         public uint RamLength => (uint) Ram.Length;
+
+        public List<uint> ProgramCounterHistory = [];
 
         public CPU(int ramSizeKb, byte[] romBytes)
         {
@@ -104,12 +108,28 @@ namespace cpu.Simulator
 
         public void WriteRam(uint val, byte b, uint address)
         {
-            Ram[address + b] = (byte) (val >> (b * 8));
+            if (address + b < Ram.Length)
+            {
+                Ram[address + b] = (byte) (val >> (b * 8));
+                return;
+            }
+
+            RegisterDump();
+
+            Console.WriteLine($"DEBUG: INVALID RAM WRITE {address + b} / 0x{address + b:X8}");
+            Console.ReadKey();
         }
 
         public uint ReadRam(byte b, uint address)
         {
-            return (uint) (Ram[address + b] << (b * 8));
+            if (address + b < Ram.Length)
+                return (uint) (Ram[address + b] << (b * 8));
+
+            RegisterDump();
+
+            Console.WriteLine($"DEBUG: INVALID RAM READ {address + b} / 0x{address + b:X8}");
+            Console.ReadKey();
+            return 0;
         }
 
         public void StackPush(uint value, StackEntrySize stackEntrySize)
@@ -173,6 +193,10 @@ namespace cpu.Simulator
 
         private void RaiseError(string errorMessage)
         {
+            foreach (uint pc in ProgramCounterHistory)
+            {
+                Console.WriteLine($"0x{pc:X8}: {Decompiler.Decompile(this, pc)}");
+            }
             RegisterDump();
             throw new Exception(errorMessage);
         }
@@ -222,7 +246,24 @@ namespace cpu.Simulator
 
         public void RunInst()
         {
+
+            foreach (IDevice device in Devices)
+            {
+                device.Tick(this);
+            }
+
+            if (Halted)
+                return;
+            
             uint pc = Registers[REG_PC];
+
+            ProgramCounterHistory.Add(pc);
+
+            if (ProgramCounterHistory.Count > MAX_PC_HISTORY)
+            {
+                ProgramCounterHistory.RemoveAt(0);
+            }
+
             InstructionOpcode opcode = (InstructionOpcode) ReadRam(0, pc);
             pc++;
             if (InitializingDevice)
@@ -252,11 +293,6 @@ namespace cpu.Simulator
                     InitializingDevice = true;
                     return;
                 }
-            }
-
-            foreach (IDevice device in Devices)
-            {
-                device.Tick(this);
             }
 
             switch (opcode)

@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using cpu.Simulator.Device;
 
 namespace cpu.Simulator
 {
     public static class Simulator
     {
-        public static bool SafeMode = true;
+        public static bool SafeMode = false;
 
         public static void Run()
         {
@@ -54,6 +55,45 @@ namespace cpu.Simulator
 
                         Console.ReadKey();
 
+                        Console.Clear();
+                        cpu.RegisterDump();
+                    }
+                    else if (key == ConsoleKey.K)
+                    {
+                        Console.WriteLine("Enter key: ");
+                        uint read = Console.ReadKey(true).KeyChar;
+                        cpu.SetRegister(0x03, new KeyboardDevice().DeviceId);
+                        cpu.SetRegister(0x04, read);
+
+                        Console.Clear();
+                        cpu.CallInterrupt(0x02);
+
+                        cpu.RegisterDump();
+                    }
+                    else if (key == ConsoleKey.C)
+                    {
+                        Console.Write("Run cycles: ");
+
+                        _ = uint.TryParse(Console.ReadLine(), out uint cycles);
+
+                        Console.Clear();
+
+                        for (int i = 0; i < cycles; i++)
+                        {
+                            cpu.RunInst();
+                        }
+                        
+                        cpu.RegisterDump();
+                    }
+                    else if (key == ConsoleKey.H)
+                    {
+                        Console.Clear();
+                        foreach (uint pc in cpu.ProgramCounterHistory)
+                        {
+                            Console.WriteLine($"0x{pc:X8}: {Decompiler.Decompile(cpu, pc)}");
+                        }
+                        Console.Write("Any key to continue ...");
+                        Console.ReadKey();
                         Console.Clear();
                         cpu.RegisterDump();
                     }
