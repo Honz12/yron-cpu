@@ -4,13 +4,6 @@ detect:
     filename: "\\.yrn$"
 
 rules:
-    # ; line comments (also enables comment toggling with Ctrl-/)
-    - comment:
-        start: ";"
-        end: "$"
-        rules:
-            - todo: "\\b(TODO|FIXME|XXX)\\b"
-            
     # "..." string literals, with escape sequences highlighted
     - constant.string:
         start: "\""
@@ -25,25 +18,35 @@ rules:
         rules:
             - constant.specialChar: "\\\\[ntr0\\\\'\"]"
 
+    # Local label definitions (.name:)
+    - identifier: "\\.[A-Za-z_][A-Za-z0-9_]*:"
+    # Global label definitions (name:)
+    - identifier: "[A-Za-z_][A-Za-z0-9_]*:"
+
     # Local label references (.name)
     - identifier: "\\.[A-Za-z_][A-Za-z0-9_]*"
     # Global label references / macro uses
     - identifier: "[A-Za-z_][A-Za-z0-9_]*"
-    # Local label definitions (.name:) - listed after references so they win
-    - identifier: "\\.[A-Za-z_][A-Za-z0-9_]*:"
-    # Global label definitions (name:) - listed after references so they win
-    - identifier: "[A-Za-z_][A-Za-z0-9_]*:"
-    
+
     # Numbers: hex, binary, decimal
     - constant.number: "\\b(0[xX][0-9a-fA-F]+|0[bB][01]+|\\d+)\\b"
 
     # Registers $00-$1F
     - special: "\\$[0-9a-fA-F]{2}"
+
     # Register aliases $pc / ${pc} / $intr / $sp
     - special: "(?i)\\$\\{?(pc|intr|sp)\\}?"
 
     # Directives / preprocessor
-    - preproc: "(?i)%(byte|word|dword|org|ascii|asciz|align|include|define)\\b"
+    - preproc: "(?i)%(byte|word|dword|org|ascii|asciz|align|include|define|fill)\\b"
 
     # Instructions (case-insensitive)
     - statement: "(?i)\\b(NOP|INT|CALL|RET|LDIB|LDIW|LDID|LDB|LDW|LDD|STB|STW|STD|MOV|ADD|SUB|MUL|DIV|MOD|AND|NAND|OR|NOR|XOR|GTE|LTE|GT|LT|EQ|JMP|JNZ|JZ|PUSH|POP)\\b"
+
+    # ; line comments
+    - comment:
+        start: ";"
+        end: "$"
+        rules:
+            - todo: "\\b(TODO|FIXME|XXX)\\b"
+            - special: "`[^`]*`"

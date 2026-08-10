@@ -1,13 +1,12 @@
 %include "malloc.yrn"
 
+%define INPUT_BUFFER_SIZE 256
+
 _value_display_device_buffer:
     %dword 0
 
-_value_input_buffer:
-    %fill 256
-
-_value_input_pointer:
-    %word 0
+_value_input_char:
+    %byte 0
 
 device_init_interrupt:
     ; $03 - Device ID
@@ -35,7 +34,7 @@ device_init_interrupt:
     ret
 
 .display_device_init:
-    ; jumped to only if the device id is 0x00000001
+    ; jumped to only if the device id is `0x00000001`
 
     ldid $13, _value_display_device_buffer
     std $06, $13                    ; store display device interaction buffer location
@@ -48,12 +47,20 @@ device_input_interrupt:
 
     push $10, DWORD
 
-    mov $10, $04                    ; print the input as char out
-    call lib_display_device_putc
+    ldib $10, 0x02                  ; keyboard device id
+    eq $10, $03, $10
+    jnz .keyboard_device_input, $10
 
+.end:
     pop $10, DWORD
 
     ret
+
+.keyboard_device_input:
+    mov $10, $04
+    call lib_keyboard_device_keystroke
+
+    jmp .end
 
 ;
 ; Prints a ASCII character to the console
@@ -73,7 +80,7 @@ lib_display_device_putc:
     ldib $13, 1
     
     add $12, $13, $14               ; get identifier position
-    stb $13, $14                    ; store 0x01 into identifier
+    stb $13, $14                    ; store `0x01` into identifier
 
     add $14, $13, $14               ; get arg1 position
     stb $10, $14                    ; store char into arg1
@@ -82,6 +89,44 @@ lib_display_device_putc:
 
     pop $14, DWORD                  ; pop what we pushed
     pop $13, DWORD
+    pop $12, DWORD
+    pop $11, DWORD
+
+    ret
+
+;
+; Simulates a keystroke from the keyboard device
+; Parameters:
+;   $10 - character typed
+;
+lib_keyboard_device_keystroke:
+    push $11, DWORD
+
+    ldid $11, _value_input_char     ; load memory store
+
+    stb $10, $11                    ; store char
+    
+    pop $11, DWORD
+
+    ret
+
+;
+; Reads a single character from the input buffer
+; If the buffer is empty, returns 0x00
+; Returns:
+;   $10 - charcter typed
+;
+lib_input_buffer_getc:
+    push $11, DWORD
+    push $12, DWORD
+    
+    ldid $11, _value_input_char     ; load memory store
+
+    ldb $10, $11                    ; load char
+
+    ldid $12, 0
+    stb $12, $11                    ; replace with `0x00`
+    
     pop $12, DWORD
     pop $11, DWORD
 
