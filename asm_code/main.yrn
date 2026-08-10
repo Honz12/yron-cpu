@@ -16,11 +16,12 @@ welcome_message:
     %asciz "Hello world\n"            ; welcome message
 
 main:
-.loop:
-    call lib_getc
-
     ldid $10, welcome_message
     call lib_puts
+.loop:
+    call lib_getc
+    call lib_putc
+    
     jmp .loop
 
 halt:

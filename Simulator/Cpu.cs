@@ -115,8 +115,9 @@ namespace cpu.Simulator
             }
 
             RegisterDump();
+            
+            if (Simulator.DebugMode) Console.WriteLine($"DEBUG: INVALID RAM WRITE {address + b} / 0x{address + b:X8}");
 
-            Console.WriteLine($"DEBUG: INVALID RAM WRITE {address + b} / 0x{address + b:X8}");
             Console.ReadKey();
         }
 
@@ -127,7 +128,7 @@ namespace cpu.Simulator
 
             RegisterDump();
 
-            Console.WriteLine($"DEBUG: INVALID RAM READ {address + b} / 0x{address + b:X8}");
+            if (Simulator.DebugMode) Console.WriteLine($"DEBUG: INVALID RAM READ {address + b} / 0x{address + b:X8}");
             Console.ReadKey();
             return 0;
         }
@@ -241,7 +242,7 @@ namespace cpu.Simulator
 
             Registers[REG_PC] = jumpValue;
 
-            Console.WriteLine($"CALLED INTERRUPT 0x{reason:X2}, JUMPING TO {jumpValue}");
+            if (Simulator.DebugMode) Console.WriteLine($"CALLED INTERRUPT 0x{reason:X2}, JUMPING TO {jumpValue}");
         }
 
         public void RunInst()
@@ -286,7 +287,7 @@ namespace cpu.Simulator
 
                     Devices[InitDeviceIndex].BeforeInterrupt(this);
 
-                    Console.WriteLine($"INIT DEVICE {Devices[InitDeviceIndex].DisplayName} [ID:{Devices[InitDeviceIndex].DeviceId:X8}]");
+                    if (Simulator.DebugMode) Console.WriteLine($"INIT DEVICE {Devices[InitDeviceIndex].DisplayName} [ID:{Devices[InitDeviceIndex].DeviceId:X8}]");
 
                     CallInterrupt(INTERRUPT_DEVICE_INIT);
 

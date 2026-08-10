@@ -6,7 +6,8 @@ namespace cpu.Simulator
 {
     public static class Simulator
     {
-        public static bool SafeMode = false;
+        public static bool DebugMode = false;
+        public static bool SafeMode = true;
 
         public static void Run()
         {
