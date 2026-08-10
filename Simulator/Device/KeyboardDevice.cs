@@ -4,7 +4,7 @@ namespace cpu.Simulator.Device
     {
         public string DisplayName => "Keyboard Device PROT:0.1";
 
-        public uint DeviceId => 0x01;
+        public uint DeviceId => 0x02;
 
         private bool DidInit = false;
 

@@ -13,8 +13,8 @@ start:
     CALL delay
     %byte 0xFF             ; halt
 
-%include "common.inc"
-%include "common.inc"      ; already included -> skipped
+%include "common.yrn"
+%include "common.yrn"      ; already included -> skipped
 
     %org 0x100
 msg:

@@ -14,23 +14,23 @@ What would you like to run?
   2. Assembler
   q. Quit
 > 2
-Source file: hello.asm
+Source file: hello.yrn
 Output file (default: rom.bin):
-Assembled hello.asm -> rom.bin (37 bytes)
+Assembled hello.yrn -> rom.bin (37 bytes)
 ```
 
 The assembler (and simulator) can also be driven non-interactively from the
 command line:
 
 ```
-cpu asm <source.asm> [output.bin]
+cpu asm <source.yrn> [output.bin]
 cpu sim <rom.bin>
 ```
 
 ## Errors
 
 Assembly errors are reported with the source file and line number, e.g.
-`ASSEMBLY ERROR: hello.asm:7: invalid register '$32'`. Included files report
+`ASSEMBLY ERROR: hello.yrn:7: invalid register '$32'`. Included files report
 the file they came from.
 
 ## Preprocessor
@@ -65,7 +65,7 @@ Rules:
 
 ### `%include`
 
-`%include "file.asm"` textually inserts another source file at that point.
+`%include "file.yrn"` textually inserts another source file at that point.
 Paths are resolved relative to the directory of the file containing the
 `%include` (falling back to the current directory for absolute/relative
 searches).
@@ -75,8 +75,8 @@ time (directly or through another include), the second include is skipped.
 This also prevents include cycles.
 
 ```asm
-%include "defines.inc"   ; inserted here
-%include "defines.inc"   ; skipped, already included
+%include "defines.yrn"   ; inserted here
+%include "defines.yrn"   ; skipped, already included
 ```
 
 ## Syntax

@@ -48,6 +48,7 @@ namespace cpu.Simulator.Device
                             Console.Clear();
                             break;
                     }
+                    cpu.WriteRam(0, 0, BufferAddress);
                 }
             }
         }

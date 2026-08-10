@@ -2,7 +2,7 @@
 
 jmp main
 
-%include "lib/.asm"
+%include "lib/.yrn"
 
 %org 0x0200                     ; interrupt table section
 
@@ -12,6 +12,18 @@ jmp main
 %org 0x0400                     ; code section
 
 main:
+    ldib $10, 'A'
+    call lib_display_device_putc
+
+    ldib $10, 'H'
+    call lib_display_device_putc
+
+    ldib $10, 'O'
+    call lib_display_device_putc
+
+    ldib $10, 'J'
+    call lib_display_device_putc
+    
     jmp halt
 
 halt:

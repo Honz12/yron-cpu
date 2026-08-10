@@ -1,3 +1,5 @@
+Device ID: 0x0000_0001
+
 ## `PROT:1.0`
 
 The protocol version 1.0 uses 4 bytes to comunicate
