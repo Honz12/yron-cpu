@@ -31,6 +31,9 @@ namespace cpu.Simulator
 
         public static void CpuProcess(CPU cpu)
         {
+            Console.WriteLine("Press [S] to enable step mode.");
+            bool stepMode = Console.ReadKey().Key == ConsoleKey.S;
+
             Console.WriteLine("If you ever feel useless just remember this statement is to make Windows 11 inteligent app blocker shut up :D");
 
             Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
@@ -42,11 +45,23 @@ namespace cpu.Simulator
             
             while (!cpu.Halted && !Raylib.WindowShouldClose())
             {
+                if (Raylib.IsKeyPressed(KeyboardKey.F11))
+                {
+                    Raylib.ToggleFullscreen();
+                }
+
                 IsFirstTick = true;
-                for (int i = 0; i < InstPerDraw; i++)
+                if (!stepMode)
+                {
+                    for (int i = 0; i < InstPerDraw; i++)
+                    {
+                        cpu.RunInst();
+                        IsFirstTick = false;
+                    }
+                }
+                else if (Raylib.IsKeyPressed(KeyboardKey.F1) || Raylib.IsKeyPressedRepeat(KeyboardKey.F1))
                 {
                     cpu.RunInst();
-                    IsFirstTick = false;
                 }
                 Raylib.BeginDrawing();
                 Raylib.ClearBackground(Color.Black);

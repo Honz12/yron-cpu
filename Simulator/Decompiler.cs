@@ -44,7 +44,7 @@ namespace cpu.Simulator
             return map;
         }
 
-        public static string Decompile(CPU cpu, uint address)
+        public static string Decompile(CPU cpu, uint address, bool include_bytes = true, bool include_inst = true)
         {
             if (address >= cpu.RamLength)
                 return "(out of range)";
@@ -107,7 +107,17 @@ namespace cpu.Simulator
             }
 
             string bytes = string.Join(" ", raw.Select(b => b.ToString("X2")));
-            return $"{bytes,-23} {sb}";
+            if (include_bytes == include_inst)
+                return $"{bytes,-23} {sb}";
+            if (include_inst)
+            {
+                return $"{sb}";
+            }
+            if (include_bytes)
+            {
+                return $"{bytes}";
+            }
+            return "";
         }
 
         private static bool Fits(CPU cpu, uint address, int width)

@@ -241,7 +241,7 @@ namespace cpu.Simulator
                     REG_SP => "$sp",
                     _ => $"${i:X2}".ToLower()
                 };
-                Raylib.DrawText($"REG alias", 0, debugBeginY + 12 * i, 10, Color.Magenta);
+                Raylib.DrawText($"REG {alias}", 0, debugBeginY + 12 * i, 10, Color.Magenta);
                 Raylib.DrawText($"{value}", 80, debugBeginY + 12 * i, 10, Color.Magenta);
                 Raylib.DrawText($"{value:X}", 160, debugBeginY + 12 * i, 10, Color.Magenta);
                 i++;
@@ -249,7 +249,8 @@ namespace cpu.Simulator
 
             uint pc = Registers[REG_PC];
             Raylib.DrawText($"NEXT INSTRUCTION @0x{pc:X8}", 0, debugBeginY + 12 * (i + 1), 10, Color.Magenta);
-            Raylib.DrawText($"{Decompiler.Decompile(this, pc)}", 0, debugBeginY + 12 * (i + 2), 10, Color.Magenta);
+            Raylib.DrawText($"{Decompiler.Decompile(this, pc, include_inst:false)}", 0, debugBeginY + 12 * (i + 2), 10, Color.Magenta);
+            Raylib.DrawText($"{Decompiler.Decompile(this, pc, include_bytes:false)}", 160, debugBeginY + 12 * (i + 2), 10, Color.Magenta);
         }
 
         public void CallInterrupt(byte reason)
