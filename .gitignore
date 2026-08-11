@@ -55,6 +55,5 @@ nunit-*.xml
 
 # Other
 
-test_code/
 rom.bin
 screenshot*
