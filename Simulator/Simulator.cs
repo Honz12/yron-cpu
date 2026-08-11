@@ -29,19 +29,32 @@ namespace cpu.Simulator
             Console.WriteLine("------------------------------");
         }
 
-        public static void CpuProcess(CPU cpu)
+        private static string FindFontPath()
         {
-            Console.WriteLine("Press [S] to enable step mode.");
-            bool stepMode = Console.ReadKey().Key == ConsoleKey.S;
+            string[] candidates =
+            {
+                Path.Combine(AppContext.BaseDirectory, "font.png"),
+                Path.Combine(Directory.GetCurrentDirectory(), "font.png")
+            };
+            foreach (string candidate in candidates)
+                if (File.Exists(candidate)) return candidate;
+            return candidates[0];
+        }
 
+        public static void CpuProcess(CPU cpu, bool stepMode, bool startFullscreen = false)
+        {
             Console.WriteLine("If you ever feel useless just remember this statement is to make Windows 11 inteligent app blocker shut up :D");
 
             Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
             Raylib.InitWindow(640, 360, "YRON SIMULATOR");
+            if (startFullscreen)
+            {
+                Raylib.ToggleFullscreen();
+            }
             Raylib.SetExitKey(KeyboardKey.Null);
             Raylib.SetTargetFPS(30);
         
-            font = Raylib.LoadTexture("font.png");
+            font = Raylib.LoadTexture(FindFontPath());
 
             bool imdInputMode = false;
             
@@ -144,8 +157,17 @@ namespace cpu.Simulator
             return selectedDevices;
         }
 
-        public static int RunFromArgs(string romPath)
+        public static int RunFromArgs(string path)
         {
+            if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                return RunFromConfig(path);
+            return RunFromRom(path);
+        }
+
+        public static int RunFromRom(string romPath)
+        {
+            InstPerDraw = 50000;
+
             if (!File.Exists(romPath))
             {
                 Console.WriteLine($"File '{romPath}' does not exist");
@@ -170,11 +192,66 @@ namespace cpu.Simulator
                 cpu.RegisterDevice(new Device.KeyboardDevice());
             }
 
+            Console.WriteLine("Press [S] to enable step mode.");
+            bool stepMode = Console.ReadKey().Key == ConsoleKey.S;
+
+            return RunLoop(cpu, stepMode, false);
+        }
+
+        public static int RunFromConfig(string configPath)
+        {
+            SimConfig config;
+            try
+            {
+                config = SimConfig.Load(configPath);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"CONFIG ERROR: {e.Message}");
+                return 1;
+            }
+
+            string romPath = config.Rom;
+            if (romPath.Length == 0)
+            {
+                Console.WriteLine($"CONFIG ERROR: no rom specified in '{configPath}'");
+                return 1;
+            }
+
+            if (!File.Exists(romPath))
+            {
+                Console.WriteLine($"File '{romPath}' does not exist (from config '{configPath}')");
+                return 1;
+            }
+
+            byte[] romBytes = File.ReadAllBytes(romPath);
+
+            Console.WriteLine($"Loaded rom of {romBytes.Length} byte{(romBytes.Length != 1 ? "s" : "")}");
+
+            CPU cpu = new(1024, romBytes);
+
+            if (config.Devices.TryGetValue("display", out bool display) && display)
+            {
+                cpu.RegisterDevice(new Device.DisplayDevice());
+            }
+
+            if (config.Devices.TryGetValue("keyboard", out bool keyboard) && keyboard)
+            {
+                cpu.RegisterDevice(new Device.KeyboardDevice());
+            }
+
+            InstPerDraw = config.Ipd;
+
+            return RunLoop(cpu, config.StepMode, config.Fullscreen);
+        }
+
+        private static int RunLoop(CPU cpu, bool stepMode, bool startFullscreen)
+        {
             if (SafeMode)
             {
                 try
                 {
-                    CpuProcess(cpu);
+                    CpuProcess(cpu, stepMode, startFullscreen);
                 }
                 catch (NotImplementedException)
                 {
@@ -187,7 +264,7 @@ namespace cpu.Simulator
             }
             else
             {
-                CpuProcess(cpu);
+                CpuProcess(cpu, stepMode, startFullscreen);
             }
 
             if (font.HasValue)

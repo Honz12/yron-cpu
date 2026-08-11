@@ -20,6 +20,23 @@ namespace cpu
                     case "builder":
                     case "4":
                         return Assembler.BuilderApp.RunFromArgs(args);
+                    case "new":
+                        if (!string.Equals(args[1], "yconf", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Console.WriteLine("Usage: cpu new yconf");
+                            return 1;
+                        }
+                        try
+                        {
+                            Simulator.SimConfig.CreateDefault().Save("yconf.json");
+                            Console.WriteLine("Created yconf.json");
+                            return 0;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"ERROR: {e.Message}");
+                            return 1;
+                        }
                     case "sim":
                     case "simulator":
                     case "1":
