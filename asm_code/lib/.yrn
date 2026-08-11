@@ -1,2 +1,0 @@
-%include "malloc.yrn"
-%include "device_drivers.yrn"
