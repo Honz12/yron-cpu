@@ -213,6 +213,7 @@ Directives start with `%` and are case-insensitive.
 | `%align <n>[, <fill>]` | Advances to the next multiple of `<n>` (default fill byte `0`). |
 | `%fill <numBytes>[, <fill>]` | Emits `<numBytes>` copies of `<fill>` (default `0`). |
 | `%extern <name>[, <name>...]` | Declares a label defined in another file. Only valid when assembling to a `.yrl` link file. |
+| `%aliasl <name> <label>` | Defines `<name>` as an alias for a locally-defined `<label>`. In library builds the alias is exported as a symbol, so other files can `%extern` it. |
 
 ### `%extern`
 
@@ -237,6 +238,29 @@ Rules:
   as a 32-bit operand (arithmetic on externs is rejected).
 - Using an extern in a byte- or word-sized operand is an error.
 - `%extern` is an error in a plain `.bin` build — libraries must be linked.
+
+### `%aliasl`
+
+`%aliasl <name> <label>` gives a locally-defined label a second, linkable name.
+Unlike `%define` (a pure text macro), the alias is a real symbol: when
+assembling a library, both the target label and the alias are exported, so other
+files can reference the alias via `%extern`. Inside the same file the alias can
+be used anywhere a label can (e.g. `call lib_putc`).
+
+```asm
+lib_display_device_putc:
+    ... code ...
+%aliasl lib_putc lib_display_device_putc
+```
+
+Rules:
+
+- `<name>` and `<label>` must be plain identifiers; `<label>` must already be
+  defined somewhere in the file (aliases may chain, and a label defined later in
+  the file is still a valid target).
+- The alias name must not collide with an existing label or `%extern` name.
+- Unlike `%extern`, `%aliasl` is also valid in a plain `.bin` build, where it
+  simply behaves as a second label.
 
 ```asm
 %org 0x200          ; interrupt table

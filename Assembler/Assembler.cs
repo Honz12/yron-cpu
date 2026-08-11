@@ -346,6 +346,7 @@ namespace Assembler
         {
             Dictionary<string, int> labels = new();
             externs = new HashSet<string>();
+            List<(string Alias, string Target, Token Token)> aliases = new();
             long address = 0;
 
             foreach (Token token in tokens)
@@ -367,6 +368,12 @@ namespace Assembler
                                 if (!IsIdentifier(op))
                                     throw new Exception($"{Where(token)}: invalid symbol name '{op}'");
                                 externs.Add(op);
+                            }
+                            break;
+                        case "aliasl":
+                            {
+                                (string alias, string target) = ParseAlias(token);
+                                aliases.Add((alias, target, token));
                             }
                             break;
                         case "org":
@@ -409,6 +416,17 @@ namespace Assembler
                         ?? throw new Exception($"{Where(token)}: unknown instruction '{token.Opcode}'");
                     address += InstructionSize(instruction);
                 }
+            }
+
+            foreach ((string alias, string target, Token token) in aliases)
+            {
+                if (externs.Contains(alias))
+                    throw new Exception($"{Where(token)}: cannot alias '{alias}': already declared '%extern'");
+                if (labels.ContainsKey(alias))
+                    throw new Exception($"{Where(token)}: duplicate symbol '{alias}'");
+                if (!labels.TryGetValue(target, out int targetAddress))
+                    throw new Exception($"{Where(token)}: alias target '{target}' is not a defined label");
+                labels[alias] = targetAddress;
             }
 
             return labels;
@@ -686,6 +704,37 @@ namespace Assembler
         {
             if (token.Operands.Count != count)
                 throw new Exception($"{Where(token)}: '{token.Opcode}' expected {count} operand{(count != 1 ? "s" : "")}, got {token.Operands.Count}");
+        }
+
+        private static (string Alias, string Target) ParseAlias(Token token)
+        {
+            string name;
+            string target;
+            if (token.Operands.Count >= 2)
+            {
+                name = token.Operands[0];
+                target = token.Operands[1];
+            }
+            else if (token.Operands.Count == 1)
+            {
+                string rest = token.Operands[0].Trim();
+                int sep = rest.IndexOfAny(new[] { ' ', '\t' });
+                if (sep < 0)
+                    throw new Exception($"{Where(token)}: '%aliasl' expected 'NAME LABEL'");
+                name = rest.Substring(0, sep);
+                target = rest.Substring(sep).Trim();
+            }
+            else
+            {
+                throw new Exception($"{Where(token)}: '%aliasl' expected 'NAME LABEL'");
+            }
+
+            if (!IsIdentifier(name))
+                throw new Exception($"{Where(token)}: invalid alias name '{name}'");
+            if (!IsIdentifier(target))
+                throw new Exception($"{Where(token)}: invalid alias target '{target}'");
+
+            return (name, target);
         }
 
         private static void EmitByte(long value, Token token, List<byte> output)

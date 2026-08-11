@@ -38,7 +38,7 @@ rules:
     - special: "(?i)\\$\\{?(pc|intr|sp)\\}?"
 
     # Directives / preprocessor
-    - preproc: "(?i)%(byte|word|dword|org|ascii|asciz|align|include|define|fill)\\b"
+    - preproc: "(?i)%(byte|word|dword|org|ascii|asciz|align|include|define|fill|extern|aliasl)\\b"
 
     # Instructions (case-insensitive)
     - statement: "(?i)\\b(NOP|INT|CALL|RET|LDIB|LDIW|LDID|LDB|LDW|LDD|STB|STW|STD|MOV|ADD|SUB|MUL|DIV|MOD|AND|NAND|OR|NOR|XOR|GTE|LTE|GT|LT|EQ|JMP|JNZ|JZ|PUSH|POP)\\b"

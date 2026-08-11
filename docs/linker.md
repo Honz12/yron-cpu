@@ -59,6 +59,10 @@ Assembling to a `.yrl` differs from a plain ROM build:
   the file's start. Code that starts with a large `%org` wastes space when
   linked — use `%org` sparingly in libraries.
 - Labels you expect another file to provide must be declared with `%extern`.
+- To expose a label under an extra name, use `%aliasl <name> <label>`; the
+  alias is exported alongside the real label. This is useful for defining
+  "public API" names that live in a different source file, e.g.
+  `%aliasl lib_putc lib_display_device_putc`.
 
 `%extern` is only allowed when the output is a `.yrl` file. External symbols
 may only be used where a full 32-bit address is emitted (e.g. `CALL`, `JMP`,
