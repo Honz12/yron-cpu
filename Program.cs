@@ -5,6 +5,8 @@ namespace cpu
         private static void Credits()
         {
             Console.WriteLine("Made by GameMage (Honz12)");
+            Console.WriteLine("Made in C# (DOTNET 10.0)");
+            Console.WriteLine();
             Console.WriteLine("Also check out: \x1b[94mhttps://github.com/Honz12/yronOS\x1b[0m");
             Console.WriteLine();
         }
