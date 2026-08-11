@@ -50,7 +50,7 @@ namespace cpu.Simulator.Device
 
                 int codepoint = display[i];
 
-                if (codepoint < 32 || codepoint >= 127)
+                if (32 <= codepoint && codepoint < 127)
                 {
                     Raylib.DrawTexturePro(
                         font,

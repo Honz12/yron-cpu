@@ -57,3 +57,4 @@ nunit-*.xml
 
 test_code/
 rom.bin
+screenshot*

@@ -27,6 +27,16 @@ cpu asm <source.yrn> [output.bin]
 cpu sim <rom.bin>
 ```
 
+Assembling with a `.yrl` output file produces a compiled library instead of a
+ROM image (see `linker.md`). The `-l` / `--link` flag forces library output;
+with no output file given, `-l` defaults the output to `<source>.yrl`:
+
+```
+cpu asm <source.yrn> <output.yrl>   ; library (by extension)
+cpu asm <source.yrn> -l             ; library, default <source>.yrl
+cpu asm <source.yrn> --link out.yrl ; library (flag forces it)
+```
+
 ## Errors
 
 Assembly errors are reported with the source file and line number, e.g.
@@ -202,6 +212,31 @@ Directives start with `%` and are case-insensitive.
 | `%asciz "<str>"[, <v>...]` | Same as `%ascii`, then emits a trailing `0` byte. |
 | `%align <n>[, <fill>]` | Advances to the next multiple of `<n>` (default fill byte `0`). |
 | `%fill <numBytes>[, <fill>]` | Emits `<numBytes>` copies of `<fill>` (default `0`). |
+| `%extern <name>[, <name>...]` | Declares a label defined in another file. Only valid when assembling to a `.yrl` link file. |
+
+### `%extern`
+
+`%extern` declares that a label is defined in another library. When the
+assembler produces a `.yrl` link file, an `%extern` label suppresses the
+"undefined symbol" error: using it where a 32-bit address is emitted
+(`CALL`, `JMP`, `JNZ`/`JZ`, `LDId`, `%dword`) writes a placeholder and records
+a reference that `cpu link` resolves. See `linker.md` for the full workflow.
+
+```asm
+%extern lib_putc
+
+print_newline:
+    ldib $10, '\n'
+    call lib_putc
+    ret
+```
+
+Rules:
+
+- `%extern` names must be plain identifiers and may only be used by themselves
+  as a 32-bit operand (arithmetic on externs is rejected).
+- Using an extern in a byte- or word-sized operand is an error.
+- `%extern` is an error in a plain `.bin` build — libraries must be linked.
 
 ```asm
 %org 0x200          ; interrupt table

@@ -32,13 +32,29 @@ namespace Assembler
 
         public static byte[] Assemble(string source, string? sourcePath = null)
         {
+            List<Token> tokens = Preprocess(source, sourcePath);
+            Dictionary<string, int> labels = BuildLabels(tokens, out HashSet<string> externs);
+            if (externs.Count > 0)
+                throw new Exception("%extern requires library output (.yrl file)");
+            return Emit(tokens, labels);
+        }
+
+        public static LibraryFile AssembleLibrary(string source, string? sourcePath = null)
+        {
+            List<Token> tokens = Preprocess(source, sourcePath);
+            Dictionary<string, int> labels = BuildLabels(tokens, out HashSet<string> externs);
+            List<(string Name, int Offset)> references = new();
+            byte[] binary = Emit(tokens, labels, externs, references);
+            return new LibraryFile(labels, references, binary);
+        }
+
+        private static List<Token> Preprocess(string source, string? sourcePath)
+        {
             string file = string.IsNullOrEmpty(sourcePath) ? "" : Path.GetFullPath(sourcePath);
             string baseDir = file.Length > 0 ? Path.GetDirectoryName(file) ?? "" : Directory.GetCurrentDirectory();
 
             List<SourceLine> lines = new Preprocessor().Process(source, file, baseDir);
-            List<Token> tokens = Parse(lines);
-            Dictionary<string, int> labels = BuildLabels(tokens);
-            return Emit(tokens, labels);
+            return Parse(lines);
         }
 
         // ---------------------------------------------------------------- preprocessor
@@ -326,9 +342,10 @@ namespace Assembler
 
         // ---------------------------------------------------------------- pass 1: symbols
 
-        private static Dictionary<string, int> BuildLabels(List<Token> tokens)
+        private static Dictionary<string, int> BuildLabels(List<Token> tokens, out HashSet<string> externs)
         {
             Dictionary<string, int> labels = new();
+            externs = new HashSet<string>();
             long address = 0;
 
             foreach (Token token in tokens)
@@ -344,6 +361,14 @@ namespace Assembler
                 {
                     switch (token.Opcode)
                     {
+                        case "extern":
+                            foreach (string op in token.Operands)
+                            {
+                                if (!IsIdentifier(op))
+                                    throw new Exception($"{Where(token)}: invalid symbol name '{op}'");
+                                externs.Add(op);
+                            }
+                            break;
                         case "org":
                             address = CheckAddress(EvalValue(RequireOne(token), token, labels), token);
                             break;
@@ -424,7 +449,7 @@ namespace Assembler
 
         // ---------------------------------------------------------------- pass 2: emission
 
-        private static byte[] Emit(List<Token> tokens, IReadOnlyDictionary<string, int> labels)
+        private static byte[] Emit(List<Token> tokens, IReadOnlyDictionary<string, int> labels, HashSet<string>? externs = null, List<(string Name, int Offset)>? references = null)
         {
             List<byte> output = new();
 
@@ -439,23 +464,23 @@ namespace Assembler
                             break;
                         case "byte":
                             foreach (string op in token.Operands)
-                                EmitDataOperand(token, op, 1, labels, output);
+                                EmitDataOperand(token, op, 1, labels, externs, references, output);
                             break;
                         case "word":
                             foreach (string op in token.Operands)
-                                EmitDataOperand(token, op, 2, labels, output);
+                                EmitDataOperand(token, op, 2, labels, externs, references, output);
                             break;
                         case "dword":
                             foreach (string op in token.Operands)
-                                EmitDataOperand(token, op, 4, labels, output);
+                                EmitDataOperand(token, op, 4, labels, externs, references, output);
                             break;
                         case "ascii":
                             foreach (string op in token.Operands)
-                                EmitDataOperand(token, op, 1, labels, output);
+                                EmitDataOperand(token, op, 1, labels, externs, references, output);
                             break;
                         case "asciz":
                             foreach (string op in token.Operands)
-                                EmitDataOperand(token, op, 1, labels, output);
+                                EmitDataOperand(token, op, 1, labels, externs, references, output);
                             output.Add(0);
                             break;
                         case "align":
@@ -487,7 +512,7 @@ namespace Assembler
 
                 if (token.Opcode == null) continue;
 
-                EncodeInstruction(token, labels, output);
+                EncodeInstruction(token, labels, externs, references, output);
             }
 
             if (output.Count > MaxRomSize)
@@ -506,7 +531,7 @@ namespace Assembler
             while (output.Count < newAddress) output.Add(0);
         }
 
-        private static void EmitDataOperand(Token token, string operand, int width, IReadOnlyDictionary<string, int> labels, List<byte> output)
+        private static void EmitDataOperand(Token token, string operand, int width, IReadOnlyDictionary<string, int> labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, List<byte> output)
         {
             if (operand.StartsWith("\""))
             {
@@ -517,16 +542,21 @@ namespace Assembler
                 return;
             }
 
-            long value = EvalValue(operand, token, labels);
             switch (width)
             {
-                case 1: EmitByte(value, token, output); break;
-                case 2: EmitWord(value, token, output); break;
-                default: EmitDword(value, token, output); break;
+                case 1:
+                    EmitByte(EvalSized(operand, token, labels, externs, references, output.Count, "byte"), token, output);
+                    break;
+                case 2:
+                    EmitWord(EvalSized(operand, token, labels, externs, references, output.Count, "word"), token, output);
+                    break;
+                default:
+                    EmitDword(EvalDword(operand, token, labels, externs, references, output.Count), token, output);
+                    break;
             }
         }
 
-        private static void EncodeInstruction(Token token, IReadOnlyDictionary<string, int> labels, List<byte> output)
+        private static void EncodeInstruction(Token token, IReadOnlyDictionary<string, int> labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, List<byte> output)
         {
             Instruction? instruction = FindInstruction(token.Opcode!);
             if (instruction == null)
@@ -544,13 +574,13 @@ namespace Assembler
                         EmitByte(ParseRegister(operand, token), token, output);
                         break;
                     case OperandKind.Byte:
-                        EmitByte(EvalValue(operand, token, labels), token, output);
+                        EmitByte(EvalSized(operand, token, labels, externs, references, output.Count, "byte"), token, output);
                         break;
                     case OperandKind.Word:
-                        EmitWord(EvalValue(operand, token, labels), token, output);
+                        EmitWord(EvalSized(operand, token, labels, externs, references, output.Count, "word"), token, output);
                         break;
                     case OperandKind.Dword:
-                        EmitDword(EvalValue(operand, token, labels), token, output);
+                        EmitDword(EvalDword(operand, token, labels, externs, references, output.Count), token, output);
                         break;
                     case OperandKind.Size:
                         EmitByte(ParseSize(operand, token), token, output);
@@ -631,6 +661,14 @@ namespace Assembler
 
         // ---------------------------------------------------------------- helpers
 
+        private static bool IsIdentifier(string s)
+        {
+            if (s.Length == 0 || !(char.IsLetter(s[0]) || s[0] == '_')) return false;
+            foreach (char c in s)
+                if (!(char.IsLetterOrDigit(c) || c == '_')) return false;
+            return true;
+        }
+
         private static string RequireOne(Token token)
         {
             RequireCount(token, 1);
@@ -707,20 +745,47 @@ namespace Assembler
         // ---------------------------------------------------------------- expression evaluator
 
         private static long EvalValue(string operand, Token token, IReadOnlyDictionary<string, int>? labels)
-            => new ExprParser(operand, token, labels).Parse();
+            => new ExprParser(operand, token, labels, null, null, -1).Parse();
+
+        private static long EvalValue(string operand, Token token, IReadOnlyDictionary<string, int>? labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int offset)
+            => new ExprParser(operand, token, labels, externs, references, offset).Parse();
+
+        private static long EvalDword(string operand, Token token, IReadOnlyDictionary<string, int> labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int offset)
+        {
+            int before = references?.Count ?? 0;
+            long value = EvalValue(operand, token, labels, externs, references, offset);
+            if (references != null && references.Count > before && operand.Trim() != references[^1].Name)
+                throw new Exception($"{Where(token)}: external symbol '{references[^1].Name}' must be used by itself as an address");
+            return value;
+        }
+
+        private static long EvalSized(string operand, Token token, IReadOnlyDictionary<string, int> labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int offset, string widthName)
+        {
+            int before = references?.Count ?? 0;
+            long value = EvalValue(operand, token, labels, externs, references, offset);
+            if (references != null && references.Count > before)
+                throw new Exception($"{Where(token)}: external symbol '{references[^1].Name}' cannot be used as a {widthName}-sized operand");
+            return value;
+        }
 
         private sealed class ExprParser
         {
             private readonly string _s;
             private readonly Token _token;
             private readonly IReadOnlyDictionary<string, int>? _labels;
+            private readonly HashSet<string>? _externs;
+            private readonly List<(string Name, int Offset)>? _references;
+            private readonly int _refOffset;
             private int _pos;
 
-            public ExprParser(string s, Token token, IReadOnlyDictionary<string, int>? labels)
+            public ExprParser(string s, Token token, IReadOnlyDictionary<string, int>? labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int refOffset)
             {
                 _s = s;
                 _token = token;
                 _labels = labels;
+                _externs = externs;
+                _references = references;
+                _refOffset = refOffset;
             }
 
             public long Parse()
@@ -876,6 +941,12 @@ namespace Assembler
 
                     if (_labels != null && _labels.TryGetValue(name, out int address))
                         return address;
+
+                    if (_externs != null && _externs.Contains(name))
+                    {
+                        _references?.Add((name, _refOffset));
+                        return 0;
+                    }
 
                     throw new Exception($"{Where(_token)}: undefined symbol '{name}'");
                 }

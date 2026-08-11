@@ -9,7 +9,7 @@ namespace cpu.Simulator
         public static bool SafeMode = true;
         public static bool DebugMode = true;
 
-        public static int InstPerDraw = 10000;
+        public static int InstPerDraw = 50000;
 
         public static Texture2D? font = null;
 
