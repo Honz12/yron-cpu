@@ -1,4 +1,5 @@
 using cpu.Simulator.Device;
+using Raylib_cs;
 
 namespace cpu.Simulator
 {
@@ -224,6 +225,27 @@ namespace cpu.Simulator
             Console.WriteLine();
             Console.WriteLine($"NEXT INSTRUCTION @0x{pc:X8}");
             Console.WriteLine($"  {Decompiler.Decompile(this, pc)}");
+        }
+
+        public void RegisterDumpRaylib(int debugBeginY)
+        {
+            int i = 0;
+            foreach (uint value in Registers)
+            {
+                string alias = i switch
+                {
+                    REG_PC => "$pc",
+                    REG_INT_REASON => "$intr",
+                    REG_SP => "$sp",
+                    _ => $"${i:X2}".ToLower()
+                };
+                Raylib.DrawText($"REG {alias,-14}: {value:D10} 0x{value:X8}", 0, debugBeginY + 12 * i, 10, Color.Magenta);
+                i++;
+            }
+
+            uint pc = Registers[REG_PC];
+            Raylib.DrawText($"NEXT INSTRUCTION @0x{pc:X8}", 0, debugBeginY + 12 * (i + 1), 10, Color.Magenta);
+            Raylib.DrawText($"{Decompiler.Decompile(this, pc)}", 0, debugBeginY + 12 * (i + 2), 10, Color.Magenta);
         }
 
         public void CallInterrupt(byte reason)

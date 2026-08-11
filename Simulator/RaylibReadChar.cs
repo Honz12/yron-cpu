@@ -2,38 +2,48 @@ using Raylib_cs;
 
 public static class InputHelper
 {
+    private struct KeyCollection()
+    {
+        public required KeyboardKey StartKeyboard;
+        public required char StartAscii;
+        public required int Lenght;
+        public bool CanBeWithShift = false;
+        public char ShiftStartAscii = '\0';
+        public bool CanBeWithControl = false;
+        public char ControlStartAscii = '\0';
+    }
+
+    private static KeyCollection[] collections =
+    [
+        new()
+        {
+            StartKeyboard=KeyboardKey.A,
+            StartAscii='a',
+            Lenght=KeyboardKey.Z-KeyboardKey.A,
+            CanBeWithShift=true,
+            ShiftStartAscii='A',
+            CanBeWithControl=true,
+            ControlStartAscii='\x01'
+        },
+        
+    ];
+
     public static char ReadPressedChar()
     {
-        // 1. Helper function to check both initial press AND repeat ticks
-        bool IsKeyTriggered(KeyboardKey key) => 
-            Raylib.IsKeyPressed(key) || Raylib.IsKeyPressedRepeat(key);
-
-        // 2. Check control keys (Initial Press + Repeat)
-        if (IsKeyTriggered(KeyboardKey.Enter) || IsKeyTriggered(KeyboardKey.KpEnter))
-            return '\n';
-
-        if (IsKeyTriggered(KeyboardKey.Backspace))
-            return '\b';
-
-        if (IsKeyTriggered(KeyboardKey.Tab))
-            return '\t';
-
-        if (IsKeyTriggered(KeyboardKey.Escape))
-            return (char)27;
-
-        for (int fkey = 0; fkey < 12; fkey++)
+        foreach (KeyCollection keyCollection in collections)
         {
-            if (IsKeyTriggered(KeyboardKey.F1 + fkey))
-                return (char)(fkey + 1);
+            for (int i = 0; i < keyCollection.Lenght; i++)
+            {
+                KeyboardKey key = keyCollection.StartKeyboard + i;
+                char c = (char) (keyCollection.StartAscii + i);
+
+                if (Raylib.IsKeyPressed(key))
+                {
+                    return c;
+                }
+            }
         }
 
-        // 3. Printable letters/numbers natively repeat via GetCharPressed
-        int charPressed = Raylib.GetCharPressed();
-        if (charPressed > 0)
-        {
-            return (char)charPressed;
-        }
-
-        return '\0'; // No key pressed
+        return '\0';
     }
 }

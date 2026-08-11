@@ -39,6 +39,8 @@ namespace cpu.Simulator.Device
 
         public void Draw(CPU cpu, Texture2D font)
         {
+            caretBlink += (byte) Raylib.GetFPS();
+
             int scale = Math.Min(Raylib.GetScreenWidth() / 640, Raylib.GetScreenHeight() / 360);
 
             Raylib.ClearBackground(Color.Black);
@@ -48,7 +50,7 @@ namespace cpu.Simulator.Device
                 int x = i % WIDTH * FONT_WIDTH * scale;
                 int y = i / WIDTH * FONT_SIZE * scale;
 
-                int codepoint = (i == caret && caretBlink < 128) ? '_' : display[i];
+                int codepoint = display[i];
 
                 Raylib.DrawTexturePro(
                     font,
@@ -56,8 +58,20 @@ namespace cpu.Simulator.Device
                     new(x, y, FONT_WIDTH * scale, FONT_SIZE * scale),
                     Vector2.Zero,
                     0,
-                    (codepoint < 32 || codepoint >= 127) ? new(16, 16, 16) : new(255, 255, 255)
+                    (codepoint < 32 || codepoint >= 127) ? new(16, 16, 16) : new(200, 200, 200)
                 );
+
+                if (i == caret && caretBlink < 128)
+                {
+                    Raylib.DrawTexturePro(
+                        font,
+                        new('_' * FONT_WIDTH, 0, FONT_WIDTH, FONT_SIZE),
+                        new(x, y, FONT_WIDTH * scale, FONT_SIZE * scale),
+                        Vector2.Zero,
+                        0,
+                        new(255, 255, 255)
+                    );
+                }
             }
         }
 
@@ -118,8 +132,6 @@ namespace cpu.Simulator.Device
 
         public void Tick(CPU cpu)
         {
-            caretBlink++;
-
             if (DidInit)
             {
                 if (cpu.ReadRam(0, BufferAddress) != 0)

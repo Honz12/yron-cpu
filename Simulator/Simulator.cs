@@ -11,6 +11,8 @@ namespace cpu.Simulator
 
         public static int InstPerDraw = 10000;
 
+        public static Texture2D? font = null;
+
         public static void Run()
         {
             Console.Write("ROM path (default: rom.bin): ");
@@ -21,12 +23,10 @@ namespace cpu.Simulator
         }
 
         public static void CpuProcess(CPU cpu, bool runInSteps)
-        {   
-            Texture2D? font = null;
-
+        {
             if (!runInSteps)
             {
-                Raylib.SetConfigFlags(ConfigFlags.FullscreenMode | ConfigFlags.ResizableWindow);
+                Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
                 Raylib.InitWindow(640, 360, "YRON SIMULATOR");
                 Raylib.SetExitKey(KeyboardKey.Null);
                 Raylib.SetTargetFPS(30);
@@ -126,23 +126,16 @@ namespace cpu.Simulator
                         cpu.RunInst();
                     }
                     Raylib.BeginDrawing();
+                    Raylib.ClearBackground(Color.Black);
                     foreach (IDevice device in cpu.Devices)
                     {
                         if (font.HasValue) device.Draw(cpu, font.Value);
                     }
                     Raylib.DrawText($"FPS: {Raylib.GetFPS()}", 0, 0, 10, Color.Magenta);
                     Raylib.DrawText($"IPS: {Raylib.GetFPS() * InstPerDraw}", 0, 12, 10, Color.Magenta);
+                    cpu.RegisterDumpRaylib(24);
                     Raylib.EndDrawing();
                 }
-            }
-
-            if (!runInSteps)
-            {
-                if (font.HasValue)
-                {
-                    Raylib.UnloadTexture(font.Value);
-                }
-                Raylib.CloseWindow();
             }
         }
 
@@ -241,6 +234,15 @@ namespace cpu.Simulator
             else
             {
                 CpuProcess(cpu, runInSteps);
+            }
+
+            if (!runInSteps)
+            {
+                if (font.HasValue)
+                {
+                    Raylib.UnloadTexture(font.Value);
+                }
+                Raylib.CloseWindow();
             }
 
             return 0;
