@@ -31,6 +31,30 @@ public static class InputHelper
             StartAscii='0',
             Lenght=10,
         },
+        new()
+        {
+            StartKeyboard=KeyboardKey.Kp0,
+            StartAscii='0',
+            Lenght=10,
+        },
+        new()
+        {
+            StartKeyboard=KeyboardKey.Escape,
+            StartAscii='\x1b',
+            Lenght=1,
+        },
+        new()
+        {
+            StartKeyboard=KeyboardKey.Enter,
+            StartAscii='\n',
+            Lenght=1,
+        },
+        new()
+        {
+            StartKeyboard=KeyboardKey.KpEnter,
+            StartAscii='\n',
+            Lenght=1,
+        },
     ];
 
     public static char ReadPressedChar()
@@ -52,7 +76,7 @@ public static class InputHelper
                     c = (char) (keyCollection.ControlStartAscii + i);
                 }
 
-                if (Raylib.IsKeyPressed(key))
+                if (Raylib.IsKeyPressed(key) || Raylib.IsKeyPressedRepeat(key))
                 {
                     return c;
                 }

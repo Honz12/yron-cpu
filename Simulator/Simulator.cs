@@ -31,6 +31,8 @@ namespace cpu.Simulator
 
         public static void CpuProcess(CPU cpu)
         {
+            Console.WriteLine("If you ever feel useless just remember this statement is to make Windows 11 inteligent app blocker shut up :D");
+
             Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
             Raylib.InitWindow(640, 360, "YRON SIMULATOR");
             Raylib.SetExitKey(KeyboardKey.Null);
