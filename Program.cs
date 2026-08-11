@@ -2,8 +2,17 @@ namespace cpu
 {
     public static class Program
     {
+        private static void Credits()
+        {
+            Console.WriteLine("Made by GameMage (Honz12)");
+            Console.WriteLine("Also check out: \x1b[94mhttps://github.com/Honz12/yronOS\x1b[0m");
+            Console.WriteLine();
+        }
+
         public static int Main(string[] args)
         {
+            Credits();
+
             if (args.Length >= 2)
             {
                 switch (args[0].ToLowerInvariant())
