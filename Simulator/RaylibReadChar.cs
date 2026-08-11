@@ -25,7 +25,12 @@ public static class InputHelper
             CanBeWithControl=true,
             ControlStartAscii='\x01'
         },
-        
+        new()
+        {
+            StartKeyboard=KeyboardKey.Zero,
+            StartAscii='0',
+            Lenght=10,
+        },
     ];
 
     public static char ReadPressedChar()
@@ -36,6 +41,16 @@ public static class InputHelper
             {
                 KeyboardKey key = keyCollection.StartKeyboard + i;
                 char c = (char) (keyCollection.StartAscii + i);
+
+                if (keyCollection.CanBeWithShift && (Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift)))
+                {
+                    c = (char) (keyCollection.ShiftStartAscii + i);
+                }
+
+                if (keyCollection.CanBeWithControl && (Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl)))
+                {
+                    c = (char) (keyCollection.ControlStartAscii + i);
+                }
 
                 if (Raylib.IsKeyPressed(key))
                 {

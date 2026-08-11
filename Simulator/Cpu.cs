@@ -86,6 +86,8 @@ namespace cpu.Simulator
 
         public uint RamLength => (uint) Ram.Length;
 
+        public ulong intsCalled = 0;
+
         public List<uint> ProgramCounterHistory = [];
 
         public CPU(int ramSizeKb, byte[] romBytes)
@@ -264,7 +266,29 @@ namespace cpu.Simulator
 
             Registers[REG_PC] = jumpValue;
 
-            if (Simulator.DebugMode) Console.WriteLine($"CALLED INTERRUPT 0x{reason:X2}, JUMPING TO {jumpValue}");
+            if (Simulator.DebugMode)
+            {
+                Simulator.WriteSep();
+                Console.WriteLine($"CALLED INTERRUPT {intsCalled} 0x{reason:X2}, JUMPING TO {jumpValue}");
+                switch (reason)
+                {
+                    case 0x00:
+                        Console.WriteLine("This seems to be a error interrupt.");
+                        RegisterDump();
+                        break;
+                    case 0x01:
+                        Console.WriteLine("This seems to be a device initialization interrupt.");
+                        Console.WriteLine($"Device ID: {GetRegister(0x03):D10} (0x{GetRegister(0x03):X8})");
+                        Console.WriteLine($"Memory needed: {GetRegister(0x05):D10} (0x{GetRegister(0x05):X8})");
+                        break;
+                    case 0x02:
+                        Console.WriteLine("This seems to be a device input interrupt.");
+                        Console.WriteLine($"Device ID: {GetRegister(0x03):D10} (0x{GetRegister(0x03):X8})");
+                        Console.WriteLine($"Input: {GetRegister(0x04):D10} (0x{GetRegister(0x04):X8})");
+                        break;
+                }
+            }
+            intsCalled++;
         }
 
         public void RunInst()

@@ -21,9 +21,7 @@ namespace cpu.Simulator.Device
         private char[] display = new char[WIDTH * HEIGHT];
         private int caret = 0;
 
-        byte caretBlink = 0; 
-
-        public bool RaylibMode = true;
+        byte caretBlink = 0;
 
         public void AfterInterrupt(CPU cpu)
         {
@@ -75,24 +73,6 @@ namespace cpu.Simulator.Device
             }
         }
 
-        private void ProcessInstConsoleMode(uint identifier, CPU cpu)
-        {
-            switch (identifier)
-            {
-                case 0x00:
-                    break;
-                case 0x01:
-                    {
-                        char c = (char) cpu.ReadRam(0, BufferAddress + 2);
-                        Console.Write(c);
-                    }
-                    break;
-                case 0x02:
-                    Console.Clear();
-                    break;
-            }
-        }
-
         private void ProcessInstRaylibMode(uint identifier, CPU cpu)
         {
             switch (identifier)
@@ -137,14 +117,7 @@ namespace cpu.Simulator.Device
                 if (cpu.ReadRam(0, BufferAddress) != 0)
                 {
                     byte identifier = (byte) cpu.ReadRam(0, BufferAddress + 1);
-                    if (RaylibMode)
-                    {
-                        ProcessInstRaylibMode(identifier, cpu);
-                    }
-                    else
-                    {
-                        ProcessInstConsoleMode(identifier, cpu);
-                    }
+                    ProcessInstRaylibMode(identifier, cpu);
                     cpu.WriteRam(0, 0, BufferAddress);
                 }
             }

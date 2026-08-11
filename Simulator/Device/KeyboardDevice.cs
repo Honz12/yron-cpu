@@ -10,8 +10,6 @@ namespace cpu.Simulator.Device
 
         private bool DidInit = false;
 
-        public bool RaylibMode = true;
-
         public void AfterInterrupt(CPU cpu)
         {
             Console.WriteLine("KEYBOARD INIT SUCCESS");
@@ -29,34 +27,16 @@ namespace cpu.Simulator.Device
 
         public void Tick(CPU cpu)
         {
-            if (DidInit)
+            if (DidInit && Simulator.IsFirstTick)
             {
-                if (RaylibMode)
+                char read = InputHelper.ReadPressedChar();
+                
+                if (read != 0)
                 {
-                    char read = InputHelper.ReadPressedChar();
-                    
-                    if (read != 0)
-                    {
-                        cpu.SetRegister(0x03, DeviceId);
-                        cpu.SetRegister(0x04, read);
+                    cpu.SetRegister(0x03, DeviceId);
+                    cpu.SetRegister(0x04, read);
 
-                        cpu.CallInterrupt(0x02);
-                    }
-                }
-                else
-                {
-                    if (Console.KeyAvailable)
-                    {
-                        uint read = Console.ReadKey(true).KeyChar;
-                        if (read == 17) // CTRL+Q
-                        {
-                            cpu.Halted = true;
-                        }
-                        cpu.SetRegister(0x03, DeviceId);
-                        cpu.SetRegister(0x04, read);
-
-                        cpu.CallInterrupt(0x02);
-                    }
+                    cpu.CallInterrupt(0x02);
                 }
             }
         }

@@ -13,6 +13,8 @@ namespace cpu.Simulator
 
         public static Texture2D? font = null;
 
+        public static bool IsFirstTick = false;
+
         public static void Run()
         {
             Console.Write("ROM path (default: rom.bin): ");
@@ -22,120 +24,38 @@ namespace cpu.Simulator
             RunFromArgs(romPath);
         }
 
-        public static void CpuProcess(CPU cpu, bool runInSteps)
+        public static void WriteSep()
         {
-            if (!runInSteps)
-            {
-                Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
-                Raylib.InitWindow(640, 360, "YRON SIMULATOR");
-                Raylib.SetExitKey(KeyboardKey.Null);
-                Raylib.SetTargetFPS(30);
-            
-                font = Raylib.LoadTexture("font.png");
-            }
+            Console.WriteLine("------------------------------");
+        }
 
-            if (runInSteps)
-            {
-                Console.Clear();
-                cpu.RegisterDump();
-            }
+        public static void CpuProcess(CPU cpu)
+        {
+            Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+            Raylib.InitWindow(640, 360, "YRON SIMULATOR");
+            Raylib.SetExitKey(KeyboardKey.Null);
+            Raylib.SetTargetFPS(30);
+        
+            font = Raylib.LoadTexture("font.png");
             
             while (!cpu.Halted && !Raylib.WindowShouldClose())
             {
-                if (runInSteps)
+                IsFirstTick = true;
+                for (int i = 0; i < InstPerDraw; i++)
                 {
-                    ConsoleKey key = Console.ReadKey(true).Key;
-                    if (key == ConsoleKey.Escape)
-                    {
-                        break;
-                    }
-                    else if (key == ConsoleKey.D)
-                    {
-                        Console.Write("RAM start address: ");
-
-                        _ = uint.TryParse(Console.ReadLine(), out uint startAddr);
-
-                        Console.Write("Bytes: ");
-
-                        _ = uint.TryParse(Console.ReadLine(), out uint bytesNum);
-
-                        Console.Clear();
-
-                        for (int i = 0; i < bytesNum; i++)
-                        {
-                            Console.Write($"{cpu.ReadRam(0, (uint) (i + startAddr)):X2} ");
-                        }
-
-                        Console.WriteLine("\nAny to continue...");
-
-                        Console.ReadKey();
-
-                        Console.Clear();
-                        cpu.RegisterDump();
-                    }
-                    else if (key == ConsoleKey.K)
-                    {
-                        Console.WriteLine("Enter key: ");
-                        uint read = Console.ReadKey(true).KeyChar;
-                        cpu.SetRegister(0x03, new KeyboardDevice().DeviceId);
-                        cpu.SetRegister(0x04, read);
-
-                        Console.Clear();
-                        cpu.CallInterrupt(0x02);
-
-                        cpu.RegisterDump();
-                    }
-                    else if (key == ConsoleKey.C)
-                    {
-                        Console.Write("Run cycles: ");
-
-                        _ = uint.TryParse(Console.ReadLine(), out uint cycles);
-
-                        Console.Clear();
-
-                        for (int i = 0; i < cycles; i++)
-                        {
-                            cpu.RunInst();
-                        }
-                        
-                        cpu.RegisterDump();
-                    }
-                    else if (key == ConsoleKey.H)
-                    {
-                        Console.Clear();
-                        foreach (uint pc in cpu.ProgramCounterHistory)
-                        {
-                            Console.WriteLine($"0x{pc:X8}: {Decompiler.Decompile(cpu, pc)}");
-                        }
-                        Console.Write("Any key to continue ...");
-                        Console.ReadKey();
-                        Console.Clear();
-                        cpu.RegisterDump();
-                    }
-                    else
-                    {
-                        Console.Clear();
-                        cpu.RunInst();
-                        cpu.RegisterDump();
-                    }
+                    cpu.RunInst();
+                    IsFirstTick = false;
                 }
-                else
+                Raylib.BeginDrawing();
+                Raylib.ClearBackground(Color.Black);
+                foreach (IDevice device in cpu.Devices)
                 {
-                    for (int i = 0; i < InstPerDraw; i++)
-                    {
-                        cpu.RunInst();
-                    }
-                    Raylib.BeginDrawing();
-                    Raylib.ClearBackground(Color.Black);
-                    foreach (IDevice device in cpu.Devices)
-                    {
-                        if (font.HasValue) device.Draw(cpu, font.Value);
-                    }
-                    Raylib.DrawText($"FPS: {Raylib.GetFPS()}", 0, 0, 10, Color.Magenta);
-                    Raylib.DrawText($"IPS: {Raylib.GetFPS() * InstPerDraw}", 0, 12, 10, Color.Magenta);
-                    cpu.RegisterDumpRaylib(24);
-                    Raylib.EndDrawing();
+                    if (font.HasValue) device.Draw(cpu, font.Value);
                 }
+                Raylib.DrawText($"FPS: {Raylib.GetFPS()}", 0, 0, 10, Color.Magenta);
+                Raylib.DrawText($"IPS: {Raylib.GetFPS() * InstPerDraw}", 0, 12, 10, Color.Magenta);
+                cpu.RegisterDumpRaylib(24);
+                Raylib.EndDrawing();
             }
         }
 
@@ -212,15 +132,11 @@ namespace cpu.Simulator
                 cpu.RegisterDevice(new Device.KeyboardDevice());
             }
 
-            Console.WriteLine("Run in steps?");
-
-            bool runInSteps = Console.ReadKey().Key == ConsoleKey.Y;
-
             if (SafeMode)
             {
                 try
                 {
-                    CpuProcess(cpu, runInSteps);
+                    CpuProcess(cpu);
                 }
                 catch (NotImplementedException)
                 {
@@ -233,17 +149,14 @@ namespace cpu.Simulator
             }
             else
             {
-                CpuProcess(cpu, runInSteps);
+                CpuProcess(cpu);
             }
 
-            if (!runInSteps)
+            if (font.HasValue)
             {
-                if (font.HasValue)
-                {
-                    Raylib.UnloadTexture(font.Value);
-                }
-                Raylib.CloseWindow();
+                Raylib.UnloadTexture(font.Value);
             }
+            Raylib.CloseWindow();
 
             return 0;
         }
