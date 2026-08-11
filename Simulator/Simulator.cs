@@ -42,12 +42,18 @@ namespace cpu.Simulator
             Raylib.SetTargetFPS(30);
         
             font = Raylib.LoadTexture("font.png");
+
+            bool imdInputMode = false;
             
             while (!cpu.Halted && !Raylib.WindowShouldClose())
             {
                 if (Raylib.IsKeyPressed(KeyboardKey.F11))
                 {
                     Raylib.ToggleFullscreen();
+                }
+                if (Raylib.IsKeyPressed(KeyboardKey.F2) && stepMode)
+                {
+                    imdInputMode = !imdInputMode;
                 }
 
                 IsFirstTick = true;
@@ -59,9 +65,20 @@ namespace cpu.Simulator
                         IsFirstTick = false;
                     }
                 }
-                else if (Raylib.IsKeyPressed(KeyboardKey.F1) || Raylib.IsKeyPressedRepeat(KeyboardKey.F1))
+                else
                 {
-                    cpu.RunInst();
+                    if (Raylib.IsKeyPressed(KeyboardKey.F1) || Raylib.IsKeyPressedRepeat(KeyboardKey.F1))
+                    {
+                        cpu.RunInst();
+                    }
+                    if (imdInputMode)
+                    {
+                        if (InputHelper.ReadPressedChar() != 0)
+                        {
+                            cpu.RunInst();
+                            imdInputMode = false;
+                        }
+                    }
                 }
                 Raylib.BeginDrawing();
                 Raylib.ClearBackground(Color.Black);
@@ -72,6 +89,10 @@ namespace cpu.Simulator
                 Raylib.DrawText($"FPS: {Raylib.GetFPS()}", 0, 0, 10, Color.Magenta);
                 Raylib.DrawText($"IPS: {Raylib.GetFPS() * InstPerDraw}", 0, 12, 10, Color.Magenta);
                 cpu.RegisterDumpRaylib(24);
+                if (imdInputMode)
+                {
+                    Raylib.DrawText("IMIDIATE INPUT MODE", 0, Raylib.GetScreenHeight() - 10, 10, Color.Magenta);
+                }
                 Raylib.EndDrawing();
             }
         }

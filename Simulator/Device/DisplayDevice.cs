@@ -50,14 +50,17 @@ namespace cpu.Simulator.Device
 
                 int codepoint = display[i];
 
-                Raylib.DrawTexturePro(
-                    font,
-                    new(codepoint * FONT_WIDTH, 0, FONT_WIDTH, FONT_SIZE),
-                    new(x, y, FONT_WIDTH * scale, FONT_SIZE * scale),
-                    Vector2.Zero,
-                    0,
-                    (codepoint < 32 || codepoint >= 127) ? new(16, 16, 16) : new(200, 200, 200)
-                );
+                if (codepoint < 32 || codepoint >= 127)
+                {
+                    Raylib.DrawTexturePro(
+                        font,
+                        new(codepoint * FONT_WIDTH, 0, FONT_WIDTH, FONT_SIZE),
+                        new(x, y, FONT_WIDTH * scale, FONT_SIZE * scale),
+                        Vector2.Zero,
+                        0,
+                        new(200, 200, 200)
+                    );
+                }
 
                 if (i == caret && caretBlink < 128)
                 {
