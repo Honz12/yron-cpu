@@ -239,6 +239,12 @@ Rules:
 - Using an extern in a byte- or word-sized operand is an error.
 - `%extern` is an error in a plain `.bin` build — libraries must be linked.
 
+Labels *defined in the same library* need no declaration: every 32-bit
+address operand that names a local or global label is recorded in the link
+file and relocated automatically when the library is linked (see
+`linker.md`). Byte- and word-sized label operands are not relocated and are
+only correct in a plain `.bin` build.
+
 ### `%aliasl`
 
 `%aliasl <name> <label>` gives a locally-defined label a second, linkable name.

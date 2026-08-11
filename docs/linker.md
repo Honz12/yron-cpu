@@ -32,9 +32,12 @@ A `.yrl` file is a compiled library: a binary file with the magic header
 
 1. **Symbol table** — exported labels. Each entry is a null-terminated string
    (the label name) followed by a 32-bit little-endian DWORD (the address).
-2. **Reference table** — external symbols this file uses. Each entry is a
-   null-terminated name followed by a DWORD giving the byte offset *inside the
-   binary* where the placeholder address must be patched.
+2. **Reference table** — every 32-bit address operand that refers to a label,
+   whether defined in this file or `%extern`. Each entry is a null-terminated
+   name followed by a DWORD giving the byte offset *inside the binary* where
+   the address must be patched. For a label defined in the same file the DWORD
+   at that offset holds the file-relative address; for an `%extern` label it
+   is a placeholder (zero).
 3. **Binary** — the compiled bytes.
 
 Both tables end with a single `\0` byte (an empty name), and no DWORD follows
@@ -68,6 +71,14 @@ Assembling to a `.yrl` differs from a plain ROM build:
 may only be used where a full 32-bit address is emitted (e.g. `CALL`, `JMP`,
 `LDId`, `%dword`), and must appear by themselves in the operand.
 
+References to labels **defined in the same library** are recorded too: any
+32-bit address operand (instruction or `%dword`) that names a label — global
+or local — is relocated automatically when the library is linked, so code can
+freely `CALL`, `JMP` or `LDId` its own labels. Label operands in **byte- or
+word-sized** positions (e.g. `%byte label`) are *not* relocatable: they are
+encoded as file-relative addresses and are only correct in a single-file
+plain build.
+
 ```asm
 ; printf.yrn
 %extern puts_char          ; provided by another library
@@ -86,8 +97,11 @@ the binaries in the order given. The first file is placed at `0x00`, the next
 right after it, and so on. It then:
 
 - Rebases every exported symbol by adding its file's base address.
-- Resolves every reference against the combined symbol table, patching the
-  DWORD placeholder at the recorded offset.
+- Patches every reference. A reference to a label **defined in the same file**
+  is relocated by adding that file's base address to the value already encoded
+  at the recorded offset (local labels like `.loop` are included). A reference
+  to an **`%extern`** label is resolved against the combined symbol table and
+  overwrites the placeholder.
 - Fails on **duplicate symbols** (two files exporting the same name) and on
   **unresolved references** (a name no input file exports).
 - Errors if the combined image exceeds the 64 KB ROM limit.

@@ -68,6 +68,24 @@ namespace cpu.Simulator
                 {
                     imdInputMode = !imdInputMode;
                 }
+                if (Raylib.IsKeyPressed(KeyboardKey.F3) && stepMode)
+                {
+                    Raylib.CloseWindow();
+
+                    _ = uint.TryParse(Console.ReadLine(), out uint jump);
+
+                    cpu.Registers[CPU.REG_PC] = jump;
+
+                    imdInputMode = !imdInputMode;
+                    Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+                    Raylib.InitWindow(640, 360, "YRON SIMULATOR");
+                    if (startFullscreen)
+                    {
+                        Raylib.ToggleFullscreen();
+                    }
+                    Raylib.SetExitKey(KeyboardKey.Null);
+                    Raylib.SetTargetFPS(30);
+                }
 
                 IsFirstTick = true;
                 if (!stepMode)

@@ -151,6 +151,7 @@ namespace Assembler
                 throw new Exception("link requires at least one input file");
 
             Dictionary<string, int> merged = new();
+            Dictionary<string, HashSet<string>> definedByFile = new();
             List<(string File, string Name, int Offset, long Base)> pendingRefs = new();
             List<byte[]> binaries = new();
             long baseAddr = 0;
@@ -159,12 +160,15 @@ namespace Assembler
             {
                 LibraryFile lib = LibraryFile.Read(path);
 
+                HashSet<string> defined = new();
                 foreach ((string name, int address) in lib.Symbols)
                 {
+                    defined.Add(name);
                     if (merged.ContainsKey(name))
                         throw new Exception($"duplicate symbol '{name}' (in '{path}')");
                     merged[name] = (int) (baseAddr + address);
                 }
+                definedByFile[path] = defined;
 
                 foreach ((string name, int offset) in lib.References)
                     pendingRefs.Add((path, name, offset, baseAddr));
@@ -188,6 +192,16 @@ namespace Assembler
                 int at = (int) (fileBase + offset);
                 if (at < 0 || at + 3 >= output.Count)
                     throw new Exception($"bad reference offset {offset} for '{name}' (in '{file}')");
+
+                if (definedByFile.TryGetValue(file, out HashSet<string>? defined) && defined.Contains(name))
+                {
+                    long value = (long) output[at] |
+                                 ((long) output[at + 1] << 8) |
+                                 ((long) output[at + 2] << 16) |
+                                 ((long) output[at + 3] << 24);
+                    value += fileBase;
+                    address = (int) value;
+                }
 
                 output[at] = (byte) address;
                 output[at + 1] = (byte) (address >> 8);

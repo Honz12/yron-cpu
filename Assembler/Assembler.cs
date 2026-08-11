@@ -794,24 +794,31 @@ namespace Assembler
         // ---------------------------------------------------------------- expression evaluator
 
         private static long EvalValue(string operand, Token token, IReadOnlyDictionary<string, int>? labels)
-            => new ExprParser(operand, token, labels, null, null, -1).Parse();
+            => new ExprParser(operand, token, labels, null, null, -1, false).Parse();
 
         private static long EvalValue(string operand, Token token, IReadOnlyDictionary<string, int>? labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int offset)
-            => new ExprParser(operand, token, labels, externs, references, offset).Parse();
+            => EvalValue(operand, token, labels, externs, references, offset, true);
+
+        private static long EvalValue(string operand, Token token, IReadOnlyDictionary<string, int>? labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int offset, bool allowReloc)
+            => new ExprParser(operand, token, labels, externs, references, offset, allowReloc).Parse();
 
         private static long EvalDword(string operand, Token token, IReadOnlyDictionary<string, int> labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int offset)
         {
             int before = references?.Count ?? 0;
-            long value = EvalValue(operand, token, labels, externs, references, offset);
-            if (references != null && references.Count > before && operand.Trim() != references[^1].Name)
-                throw new Exception($"{Where(token)}: external symbol '{references[^1].Name}' must be used by itself as an address");
+            long value = EvalValue(operand, token, labels, externs, references, offset, true);
+            if (references != null && references.Count > before)
+            {
+                string name = references[^1].Name;
+                if (externs != null && externs.Contains(name) && operand.Trim() != name)
+                    throw new Exception($"{Where(token)}: external symbol '{name}' must be used by itself as an address");
+            }
             return value;
         }
 
         private static long EvalSized(string operand, Token token, IReadOnlyDictionary<string, int> labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int offset, string widthName)
         {
             int before = references?.Count ?? 0;
-            long value = EvalValue(operand, token, labels, externs, references, offset);
+            long value = EvalValue(operand, token, labels, externs, references, offset, false);
             if (references != null && references.Count > before)
                 throw new Exception($"{Where(token)}: external symbol '{references[^1].Name}' cannot be used as a {widthName}-sized operand");
             return value;
@@ -825,9 +832,10 @@ namespace Assembler
             private readonly HashSet<string>? _externs;
             private readonly List<(string Name, int Offset)>? _references;
             private readonly int _refOffset;
+            private readonly bool _allowReloc;
             private int _pos;
 
-            public ExprParser(string s, Token token, IReadOnlyDictionary<string, int>? labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int refOffset)
+            public ExprParser(string s, Token token, IReadOnlyDictionary<string, int>? labels, HashSet<string>? externs, List<(string Name, int Offset)>? references, int refOffset, bool allowReloc)
             {
                 _s = s;
                 _token = token;
@@ -835,6 +843,7 @@ namespace Assembler
                 _externs = externs;
                 _references = references;
                 _refOffset = refOffset;
+                _allowReloc = allowReloc;
             }
 
             public long Parse()
@@ -978,7 +987,11 @@ namespace Assembler
 
                     string full = _token.LocalScope + name;
                     if (_labels != null && _labels.TryGetValue(full, out int address))
+                    {
+                        if (_allowReloc && _references != null)
+                            _references.Add((full, _refOffset));
                         return address;
+                    }
 
                     throw new Exception($"{Where(_token)}: undefined symbol '{full}'");
                 }
@@ -989,7 +1002,11 @@ namespace Assembler
                     string name = _s.Substring(start, _pos - start);
 
                     if (_labels != null && _labels.TryGetValue(name, out int address))
+                    {
+                        if (_allowReloc && _references != null)
+                            _references.Add((name, _refOffset));
                         return address;
+                    }
 
                     if (_externs != null && _externs.Contains(name))
                     {
