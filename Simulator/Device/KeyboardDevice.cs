@@ -1,3 +1,5 @@
+using Raylib_cs;
+
 namespace cpu.Simulator.Device
 {
     public class KeyboardDevice : IDevice
@@ -7,6 +9,8 @@ namespace cpu.Simulator.Device
         public uint DeviceId => 0x02;
 
         private bool DidInit = false;
+
+        public bool RaylibMode = true;
 
         public void AfterInterrupt(CPU cpu)
         {
@@ -19,26 +23,40 @@ namespace cpu.Simulator.Device
             cpu.SetRegister(0x05, 0); // we dont need memory
         }
 
-        public void Draw(CPU cpu)
+        public void Draw(CPU cpu, Texture2D font)
         {
-            throw new NotImplementedException();
         }
 
         public void Tick(CPU cpu)
         {
             if (DidInit)
             {
-                if (Console.KeyAvailable)
+                if (RaylibMode)
                 {
-                    uint read = Console.ReadKey(true).KeyChar;
-                    if (read == 17) // CTRL+Q
+                    char read = InputHelper.ReadPressedChar();
+                    
+                    if (read != 0)
                     {
-                        cpu.Halted = true;
-                    }
-                    cpu.SetRegister(0x03, DeviceId);
-                    cpu.SetRegister(0x04, read);
+                        cpu.SetRegister(0x03, DeviceId);
+                        cpu.SetRegister(0x04, read);
 
-                    cpu.CallInterrupt(0x02);
+                        cpu.CallInterrupt(0x02);
+                    }
+                }
+                else
+                {
+                    if (Console.KeyAvailable)
+                    {
+                        uint read = Console.ReadKey(true).KeyChar;
+                        if (read == 17) // CTRL+Q
+                        {
+                            cpu.Halted = true;
+                        }
+                        cpu.SetRegister(0x03, DeviceId);
+                        cpu.SetRegister(0x04, read);
+
+                        cpu.CallInterrupt(0x02);
+                    }
                 }
             }
         }

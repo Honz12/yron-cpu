@@ -1,13 +1,15 @@
-using System;
-using System.IO;
 using cpu.Simulator.Device;
+using Raylib_cs;
+
 
 namespace cpu.Simulator
 {
     public static class Simulator
     {
-        public static bool DebugMode = false;
         public static bool SafeMode = true;
+        public static bool DebugMode = true;
+
+        public static int InstPerDraw = 10000;
 
         public static void Run()
         {
@@ -19,14 +21,26 @@ namespace cpu.Simulator
         }
 
         public static void CpuProcess(CPU cpu, bool runInSteps)
-        {
+        {   
+            Texture2D? font = null;
+
+            if (!runInSteps)
+            {
+                Raylib.SetConfigFlags(ConfigFlags.FullscreenMode | ConfigFlags.ResizableWindow);
+                Raylib.InitWindow(640, 360, "YRON SIMULATOR");
+                Raylib.SetExitKey(KeyboardKey.Null);
+                Raylib.SetTargetFPS(30);
+            
+                font = Raylib.LoadTexture("font.png");
+            }
+
             if (runInSteps)
             {
                 Console.Clear();
                 cpu.RegisterDump();
             }
             
-            while (!cpu.Halted)
+            while (!cpu.Halted && !Raylib.WindowShouldClose())
             {
                 if (runInSteps)
                 {
@@ -107,8 +121,28 @@ namespace cpu.Simulator
                 }
                 else
                 {
-                    cpu.RunInst();
+                    for (int i = 0; i < InstPerDraw; i++)
+                    {
+                        cpu.RunInst();
+                    }
+                    Raylib.BeginDrawing();
+                    foreach (IDevice device in cpu.Devices)
+                    {
+                        if (font.HasValue) device.Draw(cpu, font.Value);
+                    }
+                    Raylib.DrawText($"FPS: {Raylib.GetFPS()}", 0, 0, 10, Color.Magenta);
+                    Raylib.DrawText($"IPS: {Raylib.GetFPS() * InstPerDraw}", 0, 12, 10, Color.Magenta);
+                    Raylib.EndDrawing();
                 }
+            }
+
+            if (!runInSteps)
+            {
+                if (font.HasValue)
+                {
+                    Raylib.UnloadTexture(font.Value);
+                }
+                Raylib.CloseWindow();
             }
         }
 
@@ -194,6 +228,10 @@ namespace cpu.Simulator
                 try
                 {
                     CpuProcess(cpu, runInSteps);
+                }
+                catch (NotImplementedException)
+                {
+                    throw;
                 }
                 catch (Exception e)
                 {

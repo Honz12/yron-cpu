@@ -76,7 +76,7 @@ namespace cpu.Simulator
 
         public uint[] Registers = new uint[32];
 
-        private List<IDevice> Devices = [];
+        public List<IDevice> Devices = [];
         private bool InitializingDevice = false;
         private int InitDeviceIndex = 0;
         private byte[] Ram;
