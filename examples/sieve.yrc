@@ -1,0 +1,40 @@
+// sieve.yrc
+// Counts primes up to 200 with a global u8 sieve. Returns the count in $0F.
+// Expected: 46 primes below 200.
+
+u8 sieve[201];
+
+u32 main()
+{
+    u32 i;
+    u32 j;
+    u32 count;
+
+    for (i = 0; i < 201; i = i + 1)
+        sieve[i] = 1;
+
+    sieve[0] = 0;
+    sieve[1] = 0;
+
+    for (i = 2; i < 201; i = i + 1)
+    {
+        if (sieve[i] == 1)
+        {
+            j = i + i;
+            while (j < 201)
+            {
+                sieve[j] = 0;
+                j = j + i;
+            }
+        }
+    }
+
+    count = 0;
+    for (i = 0; i < 201; i = i + 1)
+    {
+        if (sieve[i] == 1)
+            count = count + 1;
+    }
+
+    return count;
+}

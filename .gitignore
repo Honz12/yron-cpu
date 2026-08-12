@@ -57,3 +57,4 @@ nunit-*.xml
 
 rom.bin
 screenshot*
+.vscode

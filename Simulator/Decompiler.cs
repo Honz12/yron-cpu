@@ -123,6 +123,26 @@ namespace cpu.Simulator
         private static bool Fits(CPU cpu, uint address, int width)
             => (ulong) address + (ulong) width <= (ulong) cpu.RamLength;
 
+        public static int InstructionLength(CPU cpu, uint address)
+        {
+            if (address >= cpu.RamLength)
+                return 1;
+
+            byte opcode = (byte) cpu.ReadRam(0, address);
+            if (!Table.TryGetValue(opcode, out InstructionInfo? info))
+                return 1;
+
+            int size = 1;
+            foreach (OperandKind kind in info.Operands)
+                size += kind switch
+                {
+                    OperandKind.Word => 2,
+                    OperandKind.Dword => 4,
+                    _ => 1
+                };
+            return size;
+        }
+
         private static uint ReadValue(CPU cpu, uint address, int width)
         {
             uint value = 0;

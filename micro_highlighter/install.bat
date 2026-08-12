@@ -1,6 +1,7 @@
 @echo off
-rem Installs the YRN assembly syntax highlighter for the micro editor.
-rem Copies yrn.yaml into micro's syntax directory (created if missing).
+rem Installs the YRN assembly and YRC compiler syntax highlighters for the
+rem micro editor. Copies yrn.yaml and yrc.yaml into micro's syntax directory
+rem (created if missing).
 
 setlocal
 
@@ -18,6 +19,12 @@ if errorlevel 1 (
     echo Failed to install micro syntax to "%CONFIG_DIR%\syntax\yrn.yaml"
     exit /b 1
 )
+copy /Y "%~dp0yrc.yaml" "%CONFIG_DIR%\syntax\yrc.yaml" >nul
+if errorlevel 1 (
+    echo Failed to install micro syntax to "%CONFIG_DIR%\syntax\yrc.yaml"
+    exit /b 1
+)
 echo Installed micro syntax to "%CONFIG_DIR%\syntax\yrn.yaml"
+echo Installed micro syntax to "%CONFIG_DIR%\syntax\yrc.yaml"
 
 endlocal

@@ -1,0 +1,82 @@
+_start:
+call f__main
+__halt:
+jmp __halt
+f__main:
+push $1F, DWORD
+mov $1F, $02
+ldib $0E, 4
+sub $02, $0E, $02
+ldib $0E, 10
+push $0E, DWORD
+pop $10, DWORD
+call f__fib
+mov $0E, $0F
+mov $0F, $0E
+mov $02, $1F
+pop $1F, DWORD
+ret
+mov $02, $1F
+pop $1F, DWORD
+ret
+f__fib:
+push $1F, DWORD
+mov $1F, $02
+ldib $0E, 8
+sub $02, $0E, $02
+mov $0E, $1F
+ldid $03, -4
+add $0E, $03, $0E
+std $10, $0E
+mov $0E, $1F
+ldid $03, -4
+add $0E, $03, $0E
+ldd $0E, $0E
+push $0E, DWORD
+ldib $0E, 1
+pop $03, DWORD
+lte $03, $0E, $0E
+jz .l0, $0E
+mov $0E, $1F
+ldid $03, -4
+add $0E, $03, $0E
+ldd $0E, $0E
+mov $0F, $0E
+mov $02, $1F
+pop $1F, DWORD
+ret
+.l0:
+mov $0E, $1F
+ldid $03, -4
+add $0E, $03, $0E
+ldd $0E, $0E
+push $0E, DWORD
+ldib $0E, 1
+pop $03, DWORD
+sub $03, $0E, $0E
+push $0E, DWORD
+pop $10, DWORD
+call f__fib
+mov $0E, $0F
+push $0E, DWORD
+mov $0E, $1F
+ldid $03, -4
+add $0E, $03, $0E
+ldd $0E, $0E
+push $0E, DWORD
+ldib $0E, 2
+pop $03, DWORD
+sub $03, $0E, $0E
+push $0E, DWORD
+pop $10, DWORD
+call f__fib
+mov $0E, $0F
+pop $03, DWORD
+add $03, $0E, $0E
+mov $0F, $0E
+mov $02, $1F
+pop $1F, DWORD
+ret
+mov $02, $1F
+pop $1F, DWORD
+ret

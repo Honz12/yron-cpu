@@ -1,0 +1,58 @@
+// ops.yrc
+// Exercises arithmetic, bitwise ops, shifts, comparisons, &&/||, casts,
+// signed div/mod and local string copy. Returns 42 in $0F.
+
+u32 sum(u32 a, u32 b)
+{
+    return a + b;
+}
+
+i32 sdiv(i32 a, i32 b)
+{
+    return a / b;
+}
+
+i32 smod(i32 a, i32 b)
+{
+    return a % b;
+}
+
+u32 main()
+{
+    u32 x;
+    i32 y;
+    char msg[4];
+
+    x = 5;
+    x = x << 3;                 // 40
+    x = x >> 1;                 // 20
+    x = x + (x % 7);            // 20 + 6 = 26
+    x = x ^ 8;                  // 18
+    x = x | 4;                  // 22
+    x = x & 31;                 // 22
+    x = x + (1 == 1);           // 23
+    x = x + (5 > 3 && 2 < 1);   // 23 (short-circuit && is false)
+    x = x + (7 < 2 || 3 != 4);  // 24
+    x = sum(x, 6);              // 30
+
+    y = -10;
+    x = x + (u32) sdiv(y, 4);   // 30 + (u32)(-2) = 28
+    x = x + (u32) smod(y, 3);   // 28 + (u32)(-1) = 27
+
+    msg[0] = 'A';               // 65
+    msg[1] = 'B';               // 66
+    msg[2] = 'C';               // 67
+    msg[3] = '\0';
+
+    x = x + (u32) msg[0];       // 92
+    x = x - (u32) msg[2];       // 25
+    x = x - (u32) msg[1];       // wraps to a large u32 (0xFFFFFFE9)
+
+    x = x % 1000;               // 255
+    x = x + 100;                // 355
+    while (x > 100)
+        x = x - 10;             // ends at 95
+    x = x - 53;                 // 42
+
+    return x;
+}

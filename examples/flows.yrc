@@ -1,0 +1,41 @@
+// flows.yrc
+// Exercises do-while, break, continue, for, string literal init (__memcpy),
+// signed right shift of negatives (__sar) and i16 sign extension (__sext16).
+// Returns 317 in $0F.
+
+u32 main()
+{
+    u32 n = 0;
+    u32 i = 0;
+    u8 s[6] = "hello";          // h=104 e=101 l=108 l=108 o=111
+
+    do {
+        if (i == 3)
+            break;
+        n = n + (u32) s[i];     // 104 + 101 + 108 = 313
+        i = i + 1;
+    } while (i < 10);
+
+    n = n + 1;                  // 314
+
+    for (i = 0; i < 5; i = i + 1)
+        n = n + 1;              // 319
+
+    i = 0;
+    while (i < 6)
+    {
+        i = i + 1;
+        if (i == 2)
+            continue;
+        n = n + 1;              // 5 increments -> 324
+    }
+
+    i32 x = -8;
+    x = x >> 2;                 // arithmetic shift -> -2
+    n = n + (u32) x;            // 322
+
+    i16 h = (i16) -5;
+    n = n + (u32) h;            // 317
+
+    return n;
+}

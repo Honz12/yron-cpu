@@ -1,6 +1,7 @@
 #!/bin/sh
-# Installs the YRN assembly syntax highlighter for the micro editor.
-# Copies yrn.yaml into micro's syntax directory (created if missing).
+# Installs the YRN assembly and YRC compiler syntax highlighters for the
+# micro editor. Copies yrn.yaml and yrc.yaml into micro's syntax directory
+# (created if missing).
 
 set -e
 
@@ -16,4 +17,6 @@ fi
 
 mkdir -p "$CONFIG_DIR/syntax"
 cp "$DIR/yrn.yaml" "$CONFIG_DIR/syntax/yrn.yaml"
+cp "$DIR/yrc.yaml" "$CONFIG_DIR/syntax/yrc.yaml"
 echo "Installed micro syntax to $CONFIG_DIR/syntax/yrn.yaml"
+echo "Installed micro syntax to $CONFIG_DIR/syntax/yrc.yaml"

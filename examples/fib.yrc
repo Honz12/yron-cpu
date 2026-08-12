@@ -1,0 +1,14 @@
+// fib.yrc
+// Recursive fibonacci. Returns fib(10) = 55 in register $0F.
+
+u32 fib(u32 n)
+{
+    if (n <= 1)
+        return n;
+    return fib(n - 1) + fib(n - 2);
+}
+
+u32 main()
+{
+    return fib(10);
+}

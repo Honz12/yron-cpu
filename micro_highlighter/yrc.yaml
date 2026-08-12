@@ -1,0 +1,45 @@
+filetype: yrc
+
+detect:
+    filename: "\\.yrc$"
+
+rules:
+    # "..." string literals, with escape sequences highlighted
+    - constant.string:
+        start: "\""
+        end: "\""
+        rules:
+            - constant.specialChar: "\\\\[ntr0\\\\'\"]"
+
+    # '...' character literals, with escape sequences highlighted
+    - constant.string:
+        start: "'"
+        end: "'"
+        rules:
+            - constant.specialChar: "\\\\[ntr0\\\\'\"]"
+
+    # // line comments
+    - comment:
+        start: "//"
+        end: "$"
+        rules:
+            - todo: "\\b(TODO|FIXME|XXX)\\b"
+
+    # /* block comments */
+    - comment:
+        start: "/\\*"
+        end: "\\*/"
+        rules:
+            - todo: "\\b(TODO|FIXME|XXX)\\b"
+
+    # Keywords
+    - statement: "\\b(if|else|while|do|for|return|break|continue|struct)\\b"
+
+    # Types
+    - type: "\\b(void|u8|u16|u32|i8|i16|i32|char)\\b"
+
+    # Numbers: hex, binary, decimal
+    - constant.number: "\\b(0[xX][0-9a-fA-F]+|0[bB][01]+|\\d+)\\b"
+
+    # Operators
+    - operator: "&&|\\|\\||==|!=|<=|>=|<<|>>|[+\\-*/%&|^~!<>=()\\[\\]{},;:?]"
