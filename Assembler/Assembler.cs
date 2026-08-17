@@ -658,6 +658,10 @@ namespace Assembler
             Add("PUSH", 0x20, OperandKind.Reg, OperandKind.Size);
             Add("POP", 0x21, OperandKind.Reg, OperandKind.Size);
 
+            string[] alu = { "ADDS", "SUBS", "MULS", "DIVS", "MODS", "EQS", "GTS", "GTES", "LTS", "LTES" };
+            for (int i = 0; i < alu.Length; i++)
+                Add(alu[i], (byte) (0x22 + i), OperandKind.Reg, OperandKind.Reg, OperandKind.Reg);
+
             return map;
         }
 

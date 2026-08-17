@@ -29,15 +29,6 @@ namespace cpu
                         return Assembler.LinkerApp.RunFromArgs(args);
                     case "build":
                     case "builder":
-                    case "4":
-                        return Assembler.BuilderApp.RunFromArgs(args);
-                    case "cc":
-                    case "compiler":
-                    case "5":
-                        return Compiler.CompilerApp.RunFromArgs(args);
-                    case "test":
-                    case "6":
-                        return Simulator.TestApp.RunFromArgs(args);
                     case "new":
                         if (!string.Equals(args[1], "yconf", StringComparison.OrdinalIgnoreCase))
                         {
@@ -69,8 +60,6 @@ namespace cpu
                 Console.WriteLine("  2. Assembler");
                 Console.WriteLine("  3. Linker");
                 Console.WriteLine("  4. Builder");
-                Console.WriteLine("  5. Compiler");
-                Console.WriteLine("  6. Test (headless)");
                 Console.WriteLine("  q. Quit");
                 Console.Write("> ");
 
