@@ -87,15 +87,6 @@ namespace cpu
                     case "builder":
                         Assembler.BuilderApp.Run();
                         break;
-                    case "5":
-                    case "cc":
-                    case "compiler":
-                        Compiler.CompilerApp.Run();
-                        break;
-                    case "6":
-                    case "test":
-                        Simulator.TestApp.Run();
-                        break;
                     case "q":
                     case "quit":
                     case "exit":

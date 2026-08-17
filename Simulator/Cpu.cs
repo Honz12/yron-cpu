@@ -519,9 +519,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.ADD:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -537,9 +537,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.SUB:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -555,9 +555,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.MUL:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -573,9 +573,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.DIV:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -601,9 +601,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.MOD:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -629,9 +629,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.AND:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -647,9 +647,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.NAND:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -665,9 +665,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.OR:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -683,9 +683,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.NOR:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -701,9 +701,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.XOR:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -719,9 +719,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.EQ:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -737,9 +737,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.GT:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -755,9 +755,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.GTE:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -773,9 +773,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.LT:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
@@ -791,9 +791,9 @@ namespace cpu.Simulator
                     break;
                 case InstructionOpcode.LTE:
                     {
-                        int a = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint a = GetRegister((byte) ReadRam(0, pc));
                         pc++;
-                        int b = (int)GetRegister((byte) ReadRam(0, pc));
+                        uint b = GetRegister((byte) ReadRam(0, pc));
                         pc++;
                         byte str = (byte) ReadRam(0, pc);
 
