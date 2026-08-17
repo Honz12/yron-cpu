@@ -43,3 +43,17 @@ JNZ  |Address `RD`  |Cond `reg`     |-              |Jumps to a value if `Cond !
 JZ   |Address `RD`  |Cond `reg`     |-              |Jumps to a value if `Cond == 0`
 PUSH |Value `reg`   |Size `RB`      |-              |Pushes a value to the stack, Size correlates to the number of bytes pushed: 0 -> 1 Byte, 1 -> 2 Bytes, 2 -> 4 Bytes
 POP  |Dest `reg`    |Size `RB`      |-              |Pops a value from the stack, Size correlates to the number of bytes popped: 0 -> 1 Byte, 1 -> 2 Bytes, 2 -> 4 Bytes
+ADDs |A `reg`       |B `reg`        |Dest `reg`     |Signed arithmetic operation
+SUBs |A `reg`       |B `reg`        |Dest `reg`     |Signed arithmetic operation
+MULs |A `reg`       |B `reg`        |Dest `reg`     |Signed arithmetic operation
+DIVs |A `reg`       |B `reg`        |Dest `reg`     |Signed arithmetic operation
+MODs |A `reg`       |B `reg`        |Dest `reg`     |Signed arithmetic operation
+EQs  |A `reg`       |B `reg`        |Dest `reg`     |Signed compare operation
+GTs  |A `reg`       |B `reg`        |Dest `reg`     |Signed compare operation
+GTEs |A `reg`       |B `reg`        |Dest `reg`     |Signed compare operation
+LTs  |A `reg`       |B `reg`        |Dest `reg`     |Signed compare operation
+LTEs |A `reg`       |B `reg`        |Dest `reg`     |Signed compare operation
+LDbs |Register `reg`|Address `reg`  |-              |Loads an 8-bit signed value from RAM specified by the address
+LDws |Register `reg`|Address `reg`  |-              |Loads a 16-bit signed value from RAM specified by the address
+STb  |Register `reg`|Address `reg`  |-              |Stores an 8-bit signed value into RAM specified by the address
+STw  |Register `reg`|Address `reg`  |-              |Stores a 16-bit signed value into RAM specified by the address

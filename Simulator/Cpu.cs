@@ -72,6 +72,14 @@ namespace cpu.Simulator
             GTES,
             LTS,
             LTES,
+
+            // Memory management
+
+            LDbs,
+            LDws,
+
+            STbs,
+            STws,
         }
 
         public enum StackEntrySize
@@ -257,7 +265,8 @@ namespace cpu.Simulator
                 };
                 Raylib.DrawText($"REG {alias}", 0, debugBeginY + 12 * i, 10, Color.Magenta);
                 Raylib.DrawText($"{value}", 80, debugBeginY + 12 * i, 10, Color.Magenta);
-                Raylib.DrawText($"{value:X}", 160, debugBeginY + 12 * i, 10, Color.Magenta);
+                Raylib.DrawText($"{(int)value}", 160, debugBeginY + 12 * i, 10, Color.Magenta);
+                Raylib.DrawText($"{value:X}", 240, debugBeginY + 12 * i, 10, Color.Magenta);
                 i++;
             }
 
@@ -1058,6 +1067,59 @@ namespace cpu.Simulator
                         );
 
                         IncrementPC(4);
+                    }
+                    break;
+                case InstructionOpcode.LDbs:
+                    {
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = GetRegister((byte) ReadRam(0, pc));
+
+                        uint value = (uint)(sbyte)ReadRam(0, address);
+                        
+                        SetRegister(reg, value);
+
+                        IncrementPC(3);
+                    }
+                    break;
+                case InstructionOpcode.LDws:
+                    {
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = GetRegister((byte) ReadRam(0, pc));
+                        
+                        uint value = (uint)(short)(ReadRam(0, address) | ReadRam(1, address));
+                        
+                        SetRegister(reg, value);
+
+                        IncrementPC(3);
+                    }
+                    break;
+                case InstructionOpcode.STbs:
+                    {
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = GetRegister((byte) ReadRam(0, pc));
+
+                        uint value = (byte)GetRegister(reg);
+
+                        WriteRam(value, 0, address);
+
+                        IncrementPC(3);
+                    }
+                    break;
+                case InstructionOpcode.STws:
+                    {
+                        byte reg = (byte) ReadRam(0, pc);
+                        pc++;
+                        uint address = GetRegister((byte) ReadRam(0, pc));
+
+                        uint value = (ushort)GetRegister(reg);
+
+                        WriteRam(value, 0, address);
+                        WriteRam(value, 1, address);
+
+                        IncrementPC(3);
                     }
                     break;
                 default:

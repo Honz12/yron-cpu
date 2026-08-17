@@ -41,7 +41,7 @@ rules:
     - preproc: "(?i)%(byte|word|dword|org|ascii|asciz|align|include|define|fill|extern|aliasl)\\b"
 
     # Instructions (case-insensitive)
-    - statement: "(?i)\\b(NOP|INT|CALL|RET|LDIB|LDIW|LDID|LDB|LDW|LDD|STB|STW|STD|MOV|ADD|SUB|MUL|DIV|MOD|AND|NAND|OR|NOR|XOR|GTE|LTE|GT|LT|EQ|JMP|JNZ|JZ|PUSH|POP|ADDS|SUBS|MULS|DIVS|MODS|GTES|LTES|GTS|LTS|EQS)\\b"
+    - statement: "(?i)\\b(NOP|INT|CALL|RET|LDIB|LDIW|LDID|LDB|LDW|LDD|STB|STW|STD|MOV|ADD|SUB|MUL|DIV|MOD|AND|NAND|OR|NOR|XOR|GTE|LTE|GT|LT|EQ|JMP|JNZ|JZ|PUSH|POP|ADDS|SUBS|MULS|DIVS|MODS|GTES|LTES|GTS|LTS|EQS|LDBS|LDWS|STBS|STWS)\\b"
 
     # ; line comments
     - comment:

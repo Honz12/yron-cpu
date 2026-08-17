@@ -662,6 +662,10 @@ namespace Assembler
             for (int i = 0; i < alus.Length; i++)
                 Add(alus[i], (byte) (0x22 + i), OperandKind.Reg, OperandKind.Reg, OperandKind.Reg);
 
+            string[] regRegs = { "LDBS", "LDWS", "STBS", "STWS" };
+            for (int i = 0; i < regRegs.Length; i++)
+                Add(regRegs[i], (byte) (0x2C + i), OperandKind.Reg, OperandKind.Reg);
+
             return map;
         }
 
