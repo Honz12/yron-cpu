@@ -55,5 +55,5 @@ LTs  |A `reg`       |B `reg`        |Dest `reg`     |Signed compare operation
 LTEs |A `reg`       |B `reg`        |Dest `reg`     |Signed compare operation
 LDbs |Register `reg`|Address `reg`  |-              |Loads an 8-bit signed value from RAM specified by the address
 LDws |Register `reg`|Address `reg`  |-              |Loads a 16-bit signed value from RAM specified by the address
-STb  |Register `reg`|Address `reg`  |-              |Stores an 8-bit signed value into RAM specified by the address
-STw  |Register `reg`|Address `reg`  |-              |Stores a 16-bit signed value into RAM specified by the address
+STbs |Register `reg`|Address `reg`  |-              |Stores an 8-bit signed value into RAM specified by the address
+STws |Register `reg`|Address `reg`  |-              |Stores a 16-bit signed value into RAM specified by the address
